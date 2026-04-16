@@ -1,7 +1,5 @@
+import { ProductionView } from "@/modules/production/ProductionView";
+
 export function Production() {
-  return (
-    <div>
-      <p>Production</p>
-    </div>
-  );
+  return <ProductionView />;
 }

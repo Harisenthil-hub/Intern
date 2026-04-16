@@ -1,7 +1,7 @@
+import { TankMasterView } from "@/modules/tanks/TankMasterView";
+
 export function TankMaster() {
   return (
-    <div>
-      <p>TankMaster</p>
-    </div>
+    <TankMasterView />
   );
 }
