@@ -5,6 +5,7 @@ import {
   Container,
   Droplets,
   Flame,
+  Truck,
   Settings,
   LayoutDashboard,
 } from "lucide-react";
@@ -42,6 +43,11 @@ const navItems = [
     title: "Gas Production",
     url: "/production",
     icon: Flame,
+  },
+  {
+    title: "Gas Procurement",
+    url: "/procurement",
+    icon: Truck,
   },
 ];
 
