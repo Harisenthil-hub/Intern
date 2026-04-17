@@ -1,23 +1,20 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Dashboard } from "../pages/Dashboard";
-import { TankMaster } from "../pages/TankMaster";
-import { Monitoring } from "../pages/Monitoring";
-import { Production } from "../pages/Production";
-import { Layout } from "@/components/layout/Layout";
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Layout from '../components/layout/Layout';
+import Dashboard from '../pages/Dashboard';
+import CylinderFilling from '../pages/CylinderFilling';
+import CylinderMovement from '../pages/CylinderMovement';
 
-export function AppRoutes() {
+const AppRoutes = () => {
   return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/tanks" element={<TankMaster />} />
-            <Route path="/monitoring" element={<Monitoring />} />
-            <Route path="/production" element={<Production />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="filling" element={<CylinderFilling />} />
+        <Route path="movement" element={<CylinderMovement />} />
+      </Route>
+    </Routes>
   );
-}
+};
+
+export default AppRoutes;
