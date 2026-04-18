@@ -8,6 +8,7 @@ const PAGE_TITLES = {
   "/tanks": "Tank Master",
   "/monitoring": "Tank Level Monitoring",
   "/production": "Gas Production Entry",
+  "/issue-to-filling": "Gas Issue to Filling",
 };
 
 export function Layout() {

@@ -6,7 +6,7 @@ import {
   Droplets,
   Flame,
   Truck,
-  Settings,
+  Repeat,
   LayoutDashboard,
 } from "lucide-react";
 
@@ -48,6 +48,11 @@ const navItems = [
     title: "Gas Procurement",
     url: "/procurement",
     icon: Truck,
+  },
+  {
+    title: "Issue to Filling",
+    url: "/issue-to-filling",
+    icon: Repeat,
   },
 ];
 

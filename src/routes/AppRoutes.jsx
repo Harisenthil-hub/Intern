@@ -4,6 +4,7 @@ import { TankMaster } from "../pages/TankMaster";
 import { Monitoring } from "../pages/Monitoring";
 import { Production } from "../pages/Production";
 import { GasProcurement } from "../pages/GasProcurement";
+import { GasIssueToFilling } from "../pages/GasIssueToFilling";
 import { Layout } from "@/components/layout/Layout";
 
 export function AppRoutes() {
@@ -17,6 +18,7 @@ export function AppRoutes() {
             <Route path="/monitoring" element={<Monitoring />} />
             <Route path="/production" element={<Production />} />
             <Route path="/procurement" element={<GasProcurement />} />
+            <Route path="/issue-to-filling" element={<GasIssueToFilling />} />
           </Route>
         </Routes>
       </BrowserRouter>
