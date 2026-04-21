@@ -1,6 +1,5 @@
-import { LossLeakageMonitoringView } from "@/modules/lossLeakage/LossLeakageMonitoringView";
+import LossLeakageRecordsView from "@/modules/lossLeakage/LossLeakageRecordsView";
 
 export function LossLeakageMonitoring() {
-  return <LossLeakageMonitoringView />;
+  return <LossLeakageRecordsView />;
 }
-

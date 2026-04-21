@@ -1,7 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -33,6 +41,24 @@ const INITIAL_FEEDBACK = {
   tone: "",
 };
 
+const getInitialFormState = (initialData) => ({
+  tankId: initialData?.tankId ?? "",
+  date: initialData?.date ?? today,
+  expectedQuantity:
+    initialData?.expectedQuantity !== undefined && initialData?.expectedQuantity !== null
+      ? String(initialData.expectedQuantity)
+      : "",
+  actualQuantity:
+    initialData?.actualQuantity !== undefined && initialData?.actualQuantity !== null
+      ? String(initialData.actualQuantity)
+      : "",
+  lossQuantity:
+    initialData?.lossQuantity !== undefined && initialData?.lossQuantity !== null
+      ? String(initialData.lossQuantity)
+      : "",
+  reason: initialData?.reason ?? "",
+});
+
 const sanitizeNumericInput = (value) => {
   const cleaned = value.replace(/[^0-9.]/g, "");
   const firstDotIndex = cleaned.indexOf(".");
@@ -55,16 +81,30 @@ const formatNumber = (value) => {
   return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(3)));
 };
 
-export function LossLeakageMonitoringView() {
-  const [form, setForm] = useState(INITIAL_FORM);
+export function LossLeakageMonitoringView({
+  mode = "create",
+  initialData = null,
+  onSubmit,
+  onCancel,
+}) {
+  const [form, setForm] = useState(getInitialFormState(initialData));
   const [errors, setErrors] = useState({});
   const [feedbackMessage, setFeedbackMessage] = useState(INITIAL_FEEDBACK);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+  const isEditMode = mode === "edit";
 
   const selectedTank = useMemo(
     () => TANK_OPTIONS.find((tank) => tank.id === form.tankId) ?? null,
     [form.tankId],
   );
+
+  useEffect(() => {
+    const nextForm = getInitialFormState(initialData);
+    setForm(nextForm);
+    setErrors({});
+    setFeedbackMessage(INITIAL_FEEDBACK);
+    setPostConfirmOpen(false);
+  }, [initialData, mode]);
 
   const expectedValue = parseDecimal(form.expectedQuantity);
   const lossValue = parseDecimal(form.lossQuantity);
@@ -170,15 +210,15 @@ export function LossLeakageMonitoringView() {
 
   const updateField = (field, value) => {
     const nextForm = { ...form, [field]: value };
-    setIsEditMode(true);
     applyDerivedState(nextForm);
   };
 
   const handleCancel = () => {
-    setIsEditMode(false);
     setForm(INITIAL_FORM);
     setErrors({});
     setFeedbackMessage(INITIAL_FEEDBACK);
+    setPostConfirmOpen(false);
+    if (onCancel) onCancel();
   };
 
   const resetAfterSubmit = () => {
@@ -192,7 +232,7 @@ export function LossLeakageMonitoringView() {
     setForm(nextForm);
     setErrors({});
     setFeedbackMessage(INITIAL_FEEDBACK);
-    setIsEditMode(false);
+    setPostConfirmOpen(false);
   };
 
   const handleExpectedChange = (rawValue) => {
@@ -204,7 +244,6 @@ export function LossLeakageMonitoringView() {
       lossQuantity: "",
       reason: "",
     };
-    setIsEditMode(true);
     applyDerivedState(nextForm);
   };
 
@@ -228,7 +267,6 @@ export function LossLeakageMonitoringView() {
       return;
     }
 
-    setIsEditMode(true);
     applyDerivedState({ ...form, actualQuantity: sanitized, reason: "" });
   };
 
@@ -248,21 +286,45 @@ export function LossLeakageMonitoringView() {
   const handleSave = () => {
     if (!isFormValid) return;
     resetAfterSubmit();
+    if (onSubmit) {
+      onSubmit({
+        tankId: form.tankId,
+        date: form.date,
+        expectedQuantity: form.expectedQuantity,
+        actualQuantity: form.actualQuantity,
+        lossQuantity: form.lossQuantity,
+        reason: form.reason,
+        status: "draft",
+      });
+      return;
+    }
   };
 
-  const handlePost = () => {
+  const runPost = () => {
     if (!isFormValid) return;
+    setPostConfirmOpen(false);
     resetAfterSubmit();
+    if (onSubmit) {
+      onSubmit({
+        tankId: form.tankId,
+        date: form.date,
+        expectedQuantity: form.expectedQuantity,
+        actualQuantity: form.actualQuantity,
+        lossQuantity: form.lossQuantity,
+        reason: form.reason,
+        status: "posted",
+      });
+      return;
+    }
+  };
+
+  const handlePostRequest = () => {
+    if (!isFormValid) return;
+    setPostConfirmOpen(true);
   };
 
   return (
     <section className="mx-auto w-full max-w-7xl">
-      <header className="mb-6 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Loss / Leakage Monitoring
-        </h2>
-      </header>
-
       <div className="flex flex-col gap-6 xl:flex-row">
         <article className="flex-1 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <form className="space-y-7" onSubmit={(event) => event.preventDefault()}>
@@ -288,9 +350,6 @@ export function LossLeakageMonitoringView() {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.tankId && (
-                  <p className="text-sm font-medium text-red-600">{errors.tankId}</p>
-                )}
               </div>
 
               <div className="space-y-3">
@@ -321,11 +380,6 @@ export function LossLeakageMonitoringView() {
                   onChange={(event) => handleExpectedChange(event.target.value)}
                   placeholder="Enter expected quantity"
                 />
-                {errors.expectedQuantity && (
-                  <p className="text-sm font-medium text-red-600">
-                    {errors.expectedQuantity}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-3">
@@ -338,15 +392,10 @@ export function LossLeakageMonitoringView() {
                   inputMode="decimal"
                   value={form.actualQuantity}
                   onChange={(event) => handleActualChange(event.target.value)}
-                  placeholder={canEnterActual ? "Enter actual quantity" : "Enter expected first"}
+                  placeholder="Enter actual quantity"
                   disabled={!canEnterActual}
                   className={!canEnterActual ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""}
                 />
-                {errors.actualQuantity && (
-                  <p className="text-sm font-medium text-red-600">
-                    {errors.actualQuantity}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-3">
@@ -414,7 +463,7 @@ export function LossLeakageMonitoringView() {
               <Button
                 type="button"
                 className="h-9 bg-emerald-600 px-4 hover:bg-emerald-700"
-                onClick={handlePost}
+                onClick={handlePostRequest}
                 disabled={!isFormValid}
               >
                 Post
@@ -445,6 +494,25 @@ export function LossLeakageMonitoringView() {
           </div>
         </aside>
       </div>
+
+      <Dialog open={postConfirmOpen} onOpenChange={setPostConfirmOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Confirm Posting</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to post this record? This cannot be edited later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={() => setPostConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={runPost}>
+              Yes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

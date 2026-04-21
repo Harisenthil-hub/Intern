@@ -11,7 +11,8 @@ const PAGE_TITLES = {
   "/procurement": "Gas Procurement Records",
   "/procurement/new": "Gas Procurement Entry",
   "/issue-to-filling": "Gas Issue to Filling",
-  "/loss-leakage-monitoring": "Loss / Leakage Monitoring",
+  "/loss-leakage-monitoring": "Loss / Leakage Records",
+  "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring",
 };
 
 export function Layout() {
@@ -19,9 +20,15 @@ export function Layout() {
   const isProcurementEditRoute = /^\/procurement\/[^/]+\/edit$/.test(
     location.pathname,
   );
-  const pageTitle = isProcurementEditRoute
-    ? "Gas Procurement Entry"
-    : PAGE_TITLES[location.pathname] || "Dashboard";
+  const isLossLeakageEditRoute = /^\/loss-leakage-monitoring\/[^/]+\/edit$/.test(
+    location.pathname,
+  );
+  const pageTitle =
+    isProcurementEditRoute
+      ? "Gas Procurement Entry"
+      : isLossLeakageEditRoute
+        ? "Loss / Leakage Monitoring"
+        : PAGE_TITLES[location.pathname] || "Dashboard";
   return (
     <TooltipProvider>
       <SidebarProvider>
