@@ -1,4 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const VENDOR_OPTIONS = [
   "AirLiquide Supplies",
@@ -25,6 +34,22 @@ const initialFormState = (today) => ({
   quantityReceived: "",
   transportDetails: "",
 });
+
+const formStateFromRecord = (record, today) => {
+  if (!record) return initialFormState(today);
+
+  return {
+    vendorName: record.vendorName ?? "",
+    date: record.date ?? today,
+    gasType: record.gasType ?? "",
+    tankId: record.tankId ?? "",
+    quantityReceived:
+      record.quantity !== undefined && record.quantity !== null
+        ? String(record.quantity)
+        : "",
+    transportDetails: record.transportDetails ?? "",
+  };
+};
 
 const getInputClassName = (hasError) =>
   `w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 ${
@@ -71,15 +96,30 @@ function validateForm(form, selectedTank) {
   return errors;
 }
 
-export function GasProcurementEntryForm() {
+export function GasProcurementEntryForm({
+  mode = "create",
+  initialData = null,
+  onSubmit,
+  onCancel,
+}) {
   const today = new Date().toISOString().split("T")[0];
 
-  const [form, setForm] = useState(initialFormState(today));
+  const [form, setForm] = useState(formStateFromRecord(initialData, today));
 
-  const [vendorQuery, setVendorQuery] = useState("");
+  const [vendorQuery, setVendorQuery] = useState(initialData?.vendorName ?? "");
   const [vendorListOpen, setVendorListOpen] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [fieldTouched, setFieldTouched] = useState({});
+  const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    setForm(formStateFromRecord(initialData, today));
+    setVendorQuery(initialData?.vendorName ?? "");
+    setVendorListOpen(false);
+    setFieldTouched({});
+    setSubmitAttempted(false);
+    setPostConfirmOpen(false);
+  }, [initialData, today]);
 
   const filteredVendors = useMemo(() => {
     const query = vendorQuery.trim().toLowerCase();
@@ -198,9 +238,10 @@ export function GasProcurementEntryForm() {
     setVendorListOpen(false);
     setFieldTouched({});
     setSubmitAttempted(false);
+    setPostConfirmOpen(false);
   };
 
-  const handleSave = () => {
+  const runSubmit = (status) => {
     setSubmitAttempted(true);
     setFieldTouched({
       vendorName: true,
@@ -213,8 +254,33 @@ export function GasProcurementEntryForm() {
 
     if (!isFormValid) return;
 
-    window.alert("Gas procurement entry saved successfully.");
+    if (onSubmit) {
+      onSubmit({
+        vendorName: form.vendorName.trim(),
+        date: form.date,
+        gasType: form.gasType,
+        quantity: form.quantityReceived,
+        tankId: form.tankId,
+        transportDetails: form.transportDetails.trim(),
+        status,
+      });
+      return;
+    }
+
     resetForm();
+  };
+
+  const handleSave = () => {
+    runSubmit("draft");
+  };
+
+  const handlePostRequest = () => {
+    setPostConfirmOpen(true);
+  };
+
+  const handlePostConfirm = () => {
+    setPostConfirmOpen(false);
+    runSubmit("posted");
   };
 
   const selectVendor = (vendor) => {
@@ -485,7 +551,7 @@ export function GasProcurementEntryForm() {
               <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-5">
                 <button
                   type="button"
-                  onClick={resetForm}
+                  onClick={onCancel ?? resetForm}
                   className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
                 >
                   Cancel
@@ -500,8 +566,16 @@ export function GasProcurementEntryForm() {
                       : "cursor-not-allowed bg-slate-400 focus:ring-slate-200"
                   }`}
                 >
-                  Save
+                  {mode === "edit" ? "Update" : "Save"}
                 </button>
+                <Button
+                  type="button"
+                  onClick={handlePostRequest}
+                  disabled={!isFormValid}
+                  className="h-auto rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus-visible:ring-emerald-100"
+                >
+                  Post
+                </Button>
               </div>
             </form>
           </article>
@@ -539,6 +613,28 @@ export function GasProcurementEntryForm() {
           </aside>
         </div>
       </div>
+
+      <Dialog open={postConfirmOpen} onOpenChange={setPostConfirmOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Confirm Posting</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to post this entry? This action cannot be edited later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={() => setPostConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={handlePostConfirm}
+            >
+              Yes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

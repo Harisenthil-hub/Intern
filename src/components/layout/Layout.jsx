@@ -8,12 +8,19 @@ const PAGE_TITLES = {
   "/tanks": "Tank Master",
   "/monitoring": "Tank Level Monitoring",
   "/production": "Gas Production Entry",
+  "/procurement": "Gas Procurement Records",
+  "/procurement/new": "Gas Procurement Entry",
   "/issue-to-filling": "Gas Issue to Filling",
 };
 
 export function Layout() {
   const location = useLocation();
-  const pageTitle = PAGE_TITLES[location.pathname] || "Dashboard";
+  const isProcurementEditRoute = /^\/procurement\/[^/]+\/edit$/.test(
+    location.pathname,
+  );
+  const pageTitle = isProcurementEditRoute
+    ? "Gas Procurement Entry"
+    : PAGE_TITLES[location.pathname] || "Dashboard";
   return (
     <TooltipProvider>
       <SidebarProvider>

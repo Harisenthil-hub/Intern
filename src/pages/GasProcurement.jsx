@@ -1,5 +1,5 @@
-import GasProcurementEntryForm from "@/modules/procurement/GasProcurementEntryForm";
+import GasProcurementRecordsView from "@/modules/procurement/GasProcurementRecordsView";
 
 export function GasProcurement() {
-  return <GasProcurementEntryForm />;
+  return <GasProcurementRecordsView />;
 }
