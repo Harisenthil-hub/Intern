@@ -1,8 +1,16 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -31,6 +39,27 @@ const getInputClassName = (hasError) =>
     ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-100"
     : "";
 
+const initialFormState = (today) => ({
+  tankId: "",
+  date: today,
+  quantityIssued: "",
+  batchId: "",
+});
+
+const formStateFromRecord = (record, today) => {
+  if (!record) return initialFormState(today);
+
+  return {
+    tankId: record.tankId ?? "",
+    date: record.date ?? today,
+    quantityIssued:
+      record.quantity !== undefined && record.quantity !== null
+        ? String(record.quantity)
+        : "",
+    batchId: record.batchId ?? "",
+  };
+};
+
 function validateForm(form, selectedTank) {
   const errors = {};
   const quantity = form.quantityIssued.trim();
@@ -55,20 +84,31 @@ function validateForm(form, selectedTank) {
   return errors;
 }
 
-export function GasIssueToFillingView() {
-  const [form, setForm] = useState({
-    tankId: "",
-    date: getToday(),
-    quantityIssued: "",
-    batchId: "",
-  });
+export function GasIssueToFillingView({
+  mode = "create",
+  initialData = null,
+  onSubmit,
+  onCancel,
+}) {
+  const today = getToday();
+  const [form, setForm] = useState(formStateFromRecord(initialData, today));
   const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [postConfirmOpen, setPostConfirmOpen] = useState(false);
 
-  const selectedTank = TANKS.find((tank) => tank.id === form.tankId) ?? null;
+  useEffect(() => {
+    setForm(formStateFromRecord(initialData, today));
+    setTouched({});
+    setSubmitAttempted(false);
+    setPostConfirmOpen(false);
+  }, [initialData, today]);
+
+  const selectedTank = useMemo(
+    () => TANKS.find((tank) => tank.id === form.tankId) ?? null,
+    [form.tankId],
+  );
   const availableQuantity = selectedTank ? selectedTank.currentLevel : null;
-  const errors = validateForm(form, selectedTank);
+  const errors = useMemo(() => validateForm(form, selectedTank), [form, selectedTank]);
   const isFormValid = Object.keys(errors).length === 0;
 
   const quantityValue = Number(form.quantityIssued);
@@ -97,14 +137,10 @@ export function GasIssueToFillingView() {
   };
 
   const resetForm = () => {
-    setForm({
-      tankId: "",
-      date: getToday(),
-      quantityIssued: "",
-      batchId: "",
-    });
+    setForm(initialFormState(today));
     setTouched({});
     setSubmitAttempted(false);
+    setPostConfirmOpen(false);
   };
 
   const handleTankChange = (tankId) => {
@@ -116,13 +152,11 @@ export function GasIssueToFillingView() {
     }));
     setTouched({});
     setSubmitAttempted(false);
-    setSuccessMessage("");
   };
 
   const handleDateChange = (event) => {
     setForm((prev) => ({ ...prev, date: event.target.value }));
     setTouched((prev) => ({ ...prev, date: true }));
-    setSuccessMessage("");
   };
 
   const handleQuantityChange = (event) => {
@@ -130,7 +164,6 @@ export function GasIssueToFillingView() {
     if (value === "") {
       setForm((prev) => ({ ...prev, quantityIssued: "" }));
       setTouched((prev) => ({ ...prev, quantityIssued: true }));
-      setSuccessMessage("");
       return;
     }
 
@@ -138,21 +171,22 @@ export function GasIssueToFillingView() {
 
     setForm((prev) => ({ ...prev, quantityIssued: value }));
     setTouched((prev) => ({ ...prev, quantityIssued: true }));
-    setSuccessMessage("");
   };
 
   const handleBatchChange = (batchId) => {
     setForm((prev) => ({ ...prev, batchId }));
     setTouched((prev) => ({ ...prev, batchId: true }));
-    setSuccessMessage("");
   };
 
   const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     resetForm();
-    setSuccessMessage("");
   };
 
-  const handleIssueGas = () => {
+  const runSubmit = (status) => {
     setSubmitAttempted(true);
     setTouched({
       tankId: true,
@@ -163,8 +197,34 @@ export function GasIssueToFillingView() {
 
     if (!isFormValid) return;
 
-    setSuccessMessage("Gas issue recorded successfully.");
+    const payload = {
+      tankId: form.tankId,
+      gasType: selectedTank?.gasType ?? "",
+      date: form.date,
+      quantity: form.quantityIssued,
+      batchId: form.batchId,
+      status,
+    };
+
+    if (onSubmit) {
+      onSubmit(payload);
+      return;
+    }
+
     resetForm();
+  };
+
+  const handleSave = () => {
+    runSubmit("draft");
+  };
+
+  const handlePostRequest = () => {
+    setPostConfirmOpen(true);
+  };
+
+  const handlePostConfirm = () => {
+    setPostConfirmOpen(false);
+    runSubmit("posted");
   };
 
   return (
@@ -358,17 +418,20 @@ export function GasIssueToFillingView() {
               <Button
                 type="button"
                 className="h-9 bg-blue-700 px-4 hover:bg-blue-800"
-                onClick={handleIssueGas}
+                onClick={handleSave}
                 disabled={!isFormValid}
               >
-                Issue Gas
+                {mode === "edit" ? "Update" : "Save"}
+              </Button>
+              <Button
+                type="button"
+                className="h-9 bg-emerald-600 px-4 hover:bg-emerald-700"
+                onClick={handlePostRequest}
+                disabled={!isFormValid}
+              >
+                Post
               </Button>
             </div>
-            {successMessage && (
-              <p className="text-right text-sm font-medium text-emerald-700">
-                {successMessage}
-              </p>
-            )}
           </form>
         </article>
 
@@ -408,6 +471,25 @@ export function GasIssueToFillingView() {
           </div>
         </aside>
       </div>
+
+      <Dialog open={postConfirmOpen} onOpenChange={setPostConfirmOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Confirm Posting</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to post this issue? This cannot be edited later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={() => setPostConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handlePostConfirm}>
+              Yes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

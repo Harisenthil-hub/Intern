@@ -1,5 +1,5 @@
-import GasIssueToFillingView from "@/modules/filling/GasIssueToFillingView";
+import GasIssueRecordsView from "@/modules/filling/GasIssueRecordsView";
 
 export function GasIssueToFilling() {
-  return <GasIssueToFillingView />;
+  return <GasIssueRecordsView />;
 }
