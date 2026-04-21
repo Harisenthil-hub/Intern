@@ -11,6 +11,7 @@ const PAGE_TITLES = {
   "/procurement": "Gas Procurement Records",
   "/procurement/new": "Gas Procurement Entry",
   "/issue-to-filling": "Gas Issue to Filling",
+  "/loss-leakage-monitoring": "Loss / Leakage Monitoring",
 };
 
 export function Layout() {

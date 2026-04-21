@@ -8,6 +8,7 @@ import {
   Truck,
   Repeat,
   LayoutDashboard,
+  ShieldAlert,
 } from "lucide-react";
 
 import {
@@ -53,6 +54,11 @@ const navItems = [
     title: "Issue to Filling",
     url: "/issue-to-filling",
     icon: Repeat,
+  },
+  {
+    title: "Loss / Leakage Monitoring",
+    url: "/loss-leakage-monitoring",
+    icon: ShieldAlert,
   },
 ];
 

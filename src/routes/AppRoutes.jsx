@@ -7,6 +7,7 @@ import { GasProcurement } from "../pages/GasProcurement";
 import { GasProcurementEntry } from "../pages/GasProcurementEntry";
 import { GasIssueToFilling } from "../pages/GasIssueToFilling";
 import { GasIssueToFillingEntry } from "../pages/GasIssueToFillingEntry";
+import { LossLeakageMonitoring } from "../pages/LossLeakageMonitoring";
 import { Layout } from "@/components/layout/Layout";
 import { ProcurementStoreProvider } from "@/modules/procurement/ProcurementStore";
 import { GasIssueStoreProvider } from "@/modules/filling/GasIssueStore";
@@ -28,6 +29,10 @@ export function AppRoutes() {
                 <Route path="/procurement/:id/edit" element={<GasProcurementEntry />} />
                 <Route path="/issue-to-filling" element={<GasIssueToFilling />} />
                 <Route path="/issue-to-filling/new" element={<GasIssueToFillingEntry />} />
+                <Route
+                  path="/loss-leakage-monitoring"
+                  element={<LossLeakageMonitoring />}
+                />
                 <Route
                   path="/issue-to-filling/:id/edit"
                   element={<GasIssueToFillingEntry />}
