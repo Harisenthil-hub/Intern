@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GasTrack Pro Component Architecture</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 20mm; color: #333; }
+        h1 { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; }
+        h2 { color: #2563eb; margin-top: 30px; }
+        .box { border: 1px solid #cbd5e1; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .title { font-weight: bold; font-family: monospace; color: #b91c1c; font-size: 1.1em; }
+        .prop { font-family: monospace; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+        .highlight { background-color: #dbeafe; padding: 10px; border-left: 4px solid #3b82f6; margin-top: 20px; }
+        ul { margin-top: 5px; }
+        .connection { text-align: center; font-size: 24px; color: #94a3b8; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>GasTrack Pro Visual Component Architecture</h1>
+    <p>A comprehensive visual tree of how React components mount, render, and manage data.</p>
+
+    <!-- SECTION 1 -->
+    <h2>1. The Root Application Mount</h2>
+    
+    <div class="box" style="border-left: 5px solid #1e293b;">
+        <div class="title">main.jsx</div>
+        <p>Entry point. Grabs <code>&lt;div id="root"&gt;</code> and injects the entire React Virtual DOM.</p>
+    </div>
+
+    <div class="connection">↓ renders</div>
+
+    <div class="box" style="border-left: 5px solid #1e293b;">
+        <div class="title">App.jsx</div>
+        <ul>
+            <li>Wraps app in <code>&lt;BrowserRouter&gt;</code></li>
+            <li>Renders <code>&lt;AppRoutes /&gt;</code> to listen to URL changes.</li>
+        </ul>
+    </div>
+
+    <div class="connection">↓ routes to</div>
+
+    <div class="box" style="border-left: 5px solid #1e293b;">
+        <div class="title">Layout.jsx</div>
+        <p>The global shell. Renders the <code>&lt;AppSideBar&gt;</code> on the left, and pushes routed content to the right.</p>
+    </div>
+
+    <hr style="margin: 40px 0; border: 0; border-top: 1px dashed #ccc;">
+
+    <!-- SECTION 2 -->
+    <h2>2. Feature Pages & "The Brain" Logic</h2>
+    <p>If the user navigates to <code>/tanks</code>, the Router injects the TaskMaster feature page.</p>
+
+    <div class="box" style="border-left: 5px solid #2563eb;">
+        <div class="title">TankMaster.jsx (Page Placeholder)</div>
+        <p>Simply wraps and mounts the inner logic engine.</p>
+    </div>
+
+    <div class="connection">↓ renders</div>
+
+    <div class="box" style="background:#eff6ff; border: 2px solid #3b82f6;">
+        <div class="title" style="color: #1d4ed8;">TankMasterView.jsx (The Brain / State Manager)</div>
+        <p>Holds the master state for this feature: <span class="prop">viewMode</span> and <span class="prop">tanksList</span>.</p>
+        <p>Operates as a <strong>Traffic Controller</strong> switching between 3 child nodes based on <code>viewMode</code>:</p>
+    </div>
+
+    <!-- SECTION 3 -->
+    <h2>3. The Conditional Child Nodes</h2>
+
+    <!-- GRID Layout -->
+    <div style="display: flex; gap: 20px; text-align: left; margin-top:20px;">
+        
+        <!-- Node 1 -->
+        <div class="box" style="flex: 1; border-top: 4px solid #10b981;">
+            <div class="title">TankTable.jsx</div>
+            <p><strong>When:</strong> <code>viewMode === 'list'</code></p>
+            <p><strong>Inputs:</strong> Receives <span class="prop">tanksList</span> array.</p>
+            <p><strong>Mounts:</strong> HTML standard <code>&lt;table&gt;</code> to render rows. Has a button to trigger 'Add' or 'View'.</p>
+        </div>
+
+        <!-- Node 2 -->
+        <div class="box" style="flex: 1; border-top: 4px solid #eab308;">
+            <div class="title">AddTankPage.jsx</div>
+            <p><strong>When:</strong> <code>viewMode === 'add' || 'edit'</code></p>
+            <p><strong>Feature:</strong> If adding, local form state starts empty. If editing, receives <span class="prop">initialData</span> prop and fills inputs.</p>
+            <p><strong>Mounts:</strong> Two-column grid using external standalone Input form children.</p>
+        </div>
+
+        <!-- Node 3 -->
+        <div class="box" style="flex: 1; border-top: 4px solid #64748b;">
+            <div class="title">ViewTankPage.jsx</div>
+            <p><strong>When:</strong> <code>viewMode === 'view'</code></p>
+            <p><strong>Feature:</strong> Read-only view. Checks the <span class="prop">_mode: 'post'</span> flag.</p>
+            <p><strong>Mounts:</strong> Simple locked view details. If not posted, displays the "Edit Tank" button.</p>
+        </div>
+    </div>
+
+    <div class="highlight">
+        <h3 style="margin-top:0;">Crucial Design Pattern: Inline Form Extractions</h3>
+        <p>In the Add pages, <code>&lt;Input&gt;</code> and <code>&lt;Select&gt;</code> wrappers are defined <strong>OUTSIDE</strong> the main component lifecycle function (e.g., <code>function F() { ... }</code> defined globally). This prevents React from generating a new function reference during every local re-render (keystroke), solving a critical DOM unmounting bug where input fields lost focus.</p>
+    </div>
+
+</body>
+</html>
