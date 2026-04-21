@@ -30,11 +30,7 @@ export function GasProcurementRecordsView() {
 
   return (
     <section className="mx-auto w-full max-w-7xl">
-      <header className="mb-6 flex items-center justify-between gap-3">
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Gas Procurement Records
-        </h2>
-
+      <header className="mb-6 flex items-center justify-end gap-3">
         <Button
           type="button"
           className="h-9 bg-blue-700 px-4 hover:bg-blue-800"
