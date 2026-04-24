@@ -5,6 +5,10 @@ import {
   Container,
   Droplets,
   Flame,
+  Truck,
+  Repeat,
+  LayoutDashboard,
+  ShieldAlert,
   LayoutDashboard,
   Activity,
 } from "lucide-react";
@@ -34,6 +38,21 @@ const navGroups = [
       { title: "Tank Monitoring", url: "/monitoring", icon: Droplets },
       { title: "Gas Production", url: "/production", icon: Flame },
     ],
+  },
+  {
+    title: "Gas Procurement",
+    url: "/procurement",
+    icon: Truck,
+  },
+  {
+    title: "Issue to Filling",
+    url: "/issue-to-filling",
+    icon: Repeat,
+  },
+  {
+    title: "Loss / Leakage Monitoring",
+    url: "/loss-leakage-monitoring",
+    icon: ShieldAlert,
   },
 ];
 

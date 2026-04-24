@@ -4,6 +4,16 @@ import { TooltipProvider } from "../ui/tooltip";
 import { AppSidebar } from "./AppSideBar";
 import { ChevronRight } from "lucide-react";
 
+const PAGE_TITLES = {
+  "/": "Dashboard Overview",
+  "/tanks": "Tank Master",
+  "/monitoring": "Tank Level Monitoring",
+  "/production": "Gas Production Entry",
+  "/procurement": "Gas Procurement Records",
+  "/procurement/new": "Gas Procurement Entry",
+  "/issue-to-filling": "Gas Issue to Filling",
+  "/loss-leakage-monitoring": "Loss / Leakage Records",
+  "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring",
 const PAGES = {
   "/": { title: "Dashboard", desc: "System overview & quick stats" },
   "/tanks": {
@@ -35,6 +45,18 @@ const BREADCRUMBS = {
 
 export function Layout() {
   const location = useLocation();
+  const isProcurementEditRoute = /^\/procurement\/[^/]+\/edit$/.test(
+    location.pathname,
+  );
+  const isLossLeakageEditRoute = /^\/loss-leakage-monitoring\/[^/]+\/edit$/.test(
+    location.pathname,
+  );
+  const pageTitle =
+    isProcurementEditRoute
+      ? "Gas Procurement Entry"
+      : isLossLeakageEditRoute
+        ? "Loss / Leakage Monitoring"
+        : PAGE_TITLES[location.pathname] || "Dashboard";
   const page = PAGES[location.pathname] || PAGES["/"];
   const crumbs = BREADCRUMBS[location.pathname] || BREADCRUMBS["/"];
 
