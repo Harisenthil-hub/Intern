@@ -13,7 +13,7 @@ const PAGE_TITLES = {
   "/procurement/new": "Gas Procurement Entry",
   "/issue-to-filling": "Gas Issue to Filling",
   "/loss-leakage-monitoring": "Loss / Leakage Records",
-  "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring",
+  "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring"}
 const PAGES = {
   "/": { title: "Dashboard", desc: "System overview & quick stats" },
   "/tanks": {
