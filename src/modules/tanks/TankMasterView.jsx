@@ -1,37 +1,82 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { TankTable } from "./components/TankTable";
 import { AddTankPage } from "./components/AddTankPage";
 import { ViewTankPage } from "./components/ViewTankPage";
 import { Plus, Container } from "lucide-react";
 
-const DUMMY_TANKS = [
-  { tankId: "TK-1001", name: "Oxygen Storage Unit 1", gasType: "Oxygen",   capacity: "5000 Liters",  capacityValue: "5000", capacityUnit: "Liters", location: "Plant A - Zone 1", minLevel: "500",  maxLevel: "4800", calibrationRef: "CAL-2024-001", status: "Active",      _mode: "post" },
-  { tankId: "TK-1002", name: "Nitrogen Reserve Tank", gasType: "Nitrogen", capacity: "8000 Liters",  capacityValue: "8000", capacityUnit: "Liters", location: "Plant A - Zone 2", minLevel: "800",  maxLevel: "7500", calibrationRef: "CAL-2024-002", status: "Active",      _mode: "post" },
-  { tankId: "TK-1003", name: "LPG Storage Vessel A",  gasType: "LPG",     capacity: "3000 Kg",      capacityValue: "3000", capacityUnit: "Kg",     location: "Plant B - Zone 1", minLevel: "300",  maxLevel: "2800", calibrationRef: "",             status: "Active",      _mode: "post" },
-  { tankId: "TK-1004", name: "CO₂ Bulk Tank",         gasType: "CO2",     capacity: "2500 Liters",  capacityValue: "2500", capacityUnit: "Liters", location: "Plant B - Zone 3", minLevel: "250",  maxLevel: "2400", calibrationRef: "CAL-2024-004", status: "Maintenance", _mode: "save" },
-  { tankId: "TK-1005", name: "Argon Cylinder Bank",   gasType: "Argon",   capacity: "1200 m³",      capacityValue: "1200", capacityUnit: "m³",     location: "Plant C",          minLevel: "100",  maxLevel: "1150", calibrationRef: "",             status: "Active",      _mode: "save" },
-];
+
 
 export function TankMasterView() {
-  const [tanks, setTanks] = useState(DUMMY_TANKS);
+  const [tanks, setTanks] = useState([]);
   const [viewMode, setViewMode] = useState("list"); // list | add | view | edit
   const [selectedTank, setSelectedTank] = useState(null);
 
-  const handleAddTank = (tank) => {
-    setTanks((prev) => [...prev, tank]);
-    setViewMode("list");
+  const calculateNextId = (prefix, list, idField) => {
+    if (!list || list.length === 0) return `${prefix}-1001`;
+    const ids = list.map(item => {
+      const parts = (item[idField] || "").split("-");
+      return parts.length === 2 ? parseInt(parts[1], 10) : 0;
+    }).filter(n => !isNaN(n));
+    const max = Math.max(1000, ...ids);
+    return `${prefix}-${max + 1}`;
   };
 
-  const handleEditTank = (updatedTank) => {
-    setTanks((prev) =>
-      prev.map((t) => (t.tankId === updatedTank.tankId ? updatedTank : t))
-    );
-    setViewMode("list");
+  const fetchTanks = () => {
+    fetchApi("/tanks").then(setTanks).catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchTanks();
+  }, []);
+
+  const handleAddTank = async (tank) => {
+    try {
+      if (tank.tankId && tank.tankId.startsWith("TK-") && !tank.tankId.includes("100")) {
+         // The logic for detecting new tank might be tricky if we use dummy IDs, 
+         // but wait, if it's edit, it comes from handleEditTank.
+      }
+      await fetchApi("/tanks", {
+        method: "POST",
+        body: JSON.stringify({
+          ...tank,
+          capacity_value: Number(tank.capacityValue),
+          capacity_unit: tank.capacityUnit,
+          min_level: tank.minLevel ? Number(tank.minLevel) : null,
+          max_level: tank.maxLevel ? Number(tank.maxLevel) : null,
+          gas_type: tank.gasType,
+          calibration_ref: tank.calibrationRef,
+          is_posted: tank.isPosted,
+        })
+      });
+      fetchTanks();
+      setViewMode("list");
+    } catch (e) { console.error(e); }
+  };
+
+  const handleEditTank = async (updatedTank) => {
+    try {
+      await fetchApi(`/tanks/${updatedTank.tank_id || updatedTank.tankId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ...updatedTank,
+          capacity_value: Number(updatedTank.capacityValue || updatedTank.capacity_value),
+          capacity_unit: updatedTank.capacityUnit || updatedTank.capacity_unit,
+          min_level: updatedTank.minLevel ? Number(updatedTank.minLevel) : null,
+          max_level: updatedTank.maxLevel ? Number(updatedTank.maxLevel) : null,
+          gas_type: updatedTank.gasType || updatedTank.gas_type,
+          calibration_ref: updatedTank.calibrationRef || updatedTank.calibration_ref,
+          is_posted: updatedTank.isPosted !== undefined ? updatedTank.isPosted : updatedTank.is_posted,
+        })
+      });
+      fetchTanks();
+      setViewMode("list");
+    } catch (e) { console.error(e); }
   };
 
   if (viewMode === "add") {
-    return <AddTankPage onAdd={handleAddTank} onCancel={() => setViewMode("list")} />;
+    return <AddTankPage nextId={calculateNextId("TK", tanks, "tank_id")} onAdd={handleAddTank} onCancel={() => setViewMode("list")} />;
   }
 
   if (viewMode === "edit" && selectedTank) {

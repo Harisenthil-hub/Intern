@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, parse } from "date-fns";
+import { fetchApi } from "@/lib/api";
+import { useLookups } from "@/hooks/useLookups";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
@@ -44,13 +46,23 @@ function SL({ label, name, children, placeholder, value, onValueChange, error })
   );
 }
 
-export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
+export function AddProductionPage({ onAdd, onCancel, initialData = null, nextId = "PROD-2001" }) {
+  const { lookups, loading } = useLookups();
   const isEdit = !!initialData;
   const [form, setForm] = useState(
     initialData
-      ? { ...initialData }
+      ? {
+          productionId: initialData.production_id || initialData.productionId,
+          date: initialData.date || "",
+          plant: initialData.plant || "",
+          gasType: initialData.gas_type || initialData.gasType || "",
+          quantity: initialData.quantity || "",
+          quantityUnit: initialData.quantity_unit || initialData.quantityUnit || "Liters",
+          batch: initialData.batch || "",
+          linkedTankId: initialData.linked_tank_id || initialData.linkedTankId || "",
+        }
       : {
-          productionId: `PROD-${++prodCounter}`,
+          productionId: nextId,
           date: "",
           plant: "",
           gasType: "",
@@ -60,12 +72,30 @@ export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
           linkedTankId: "",
         }
   );
+
+  useEffect(() => {
+    if (!isEdit && nextId) {
+      setForm(prev => ({ ...prev, productionId: nextId }));
+    }
+  }, [nextId, isEdit]);
+
   const [date, setDate] = useState(
     initialData?.date
-      ? (() => { try { return parse(initialData.date, "dd MMM yyyy", new Date()); } catch { return undefined; } })()
-      : undefined
+      ? (() => { 
+          try { 
+            const d = new Date(initialData.date); 
+            if (!isNaN(d)) return d;
+            return parse(initialData.date, "dd MMM yyyy", new Date()); 
+          } catch { return undefined; } 
+        })()
+      : new Date()
   );
   const [errors, setErrors] = useState({});
+
+  const [tanks, setTanks] = useState([]);
+  useEffect(() => {
+    fetchApi("/tanks").then(data => setTanks(data || [])).catch(console.error);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -74,8 +104,19 @@ export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
   };
 
   const handleSelect = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const finalValue = value === "none" ? "" : value;
+    setForm((prev) => {
+      const update = { ...prev, [name]: finalValue };
+      if (name === "linkedTankId" && finalValue) {
+        const tank = tanks.find(t => t.tank_id === finalValue);
+        if (tank && tank.gas_type) {
+          update.gasType = tank.gas_type;
+        }
+      }
+      return update;
+    });
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (name === "linkedTankId" && errors.gasType) setErrors((prev) => ({ ...prev, gasType: "" }));
   };
 
   const validate = () => {
@@ -84,17 +125,29 @@ export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
     if (!form.plant?.trim()) e.plant = "Plant is required";
     if (!form.gasType) e.gasType = "Gas type is required";
     if (!form.quantity) e.quantity = "Quantity is required";
+    
+    if (form.linkedTankId && form.gasType) {
+      const tank = tanks.find(t => t.tank_id === form.linkedTankId);
+      if (tank && tank.gas_type !== form.gasType) {
+        e.gasType = `Must match tank's gas type (${tank.gas_type})`;
+      }
+    }
+    
     return e;
   };
 
   const handleSubmit = (mode) => {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
+    const d = date || (form.date ? new Date(form.date) : null);
+    const isoDate = d
+      ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      : form.date;
     onAdd({
       ...form,
-      date: date ? format(date, "dd MMM yyyy") : form.date,
+      date: isoDate,
       quantityDisplay: `${form.quantity} ${form.quantityUnit}`,
-      _mode: mode,
+      isPosted: mode === "save" ? 0 : 1,
     });
   };
 
@@ -114,7 +167,7 @@ export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
               {isEdit ? "Edit Production Entry" : "New Production Entry"}
             </h2>
             <p className="text-orange-100 text-xs">
-              {isEdit ? "Update fields. Save keeps as Draft; Post locks the record." : "Record gas generated internally at the plant"}
+              {isEdit ? "Update fields. Save keeps as Saved; Post locks the record." : "Record gas generated internally at the plant"}
             </p>
           </div>
           <span className="ml-auto bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-mono">{form.productionId}</span>
@@ -141,35 +194,30 @@ export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
               </Popover>
               {errors.date && <p className="text-xs text-red-500">{errors.date}</p>}
             </div>
-            <F label="Plant *" placeholder="e.g. Plant A" {...fProps("plant")} />
+            <SL label="Plant *" placeholder="Select plant" {...slProps("plant")}>
+              {lookups.plants.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SL>
           </div>
 
           {/* Row 2: Gas type + Qty + Unit */}
           <div className="grid grid-cols-3 gap-4">
             <SL label="Gas Type *" placeholder="Select gas type" {...slProps("gasType")}>
-              <SelectItem value="Oxygen">Oxygen (O₂)</SelectItem>
-              <SelectItem value="Nitrogen">Nitrogen (N₂)</SelectItem>
-              <SelectItem value="LPG">LPG</SelectItem>
-              <SelectItem value="CO2">Carbon Dioxide</SelectItem>
-              <SelectItem value="Argon">Argon</SelectItem>
+              {lookups.gasTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
             </SL>
             <F label="Quantity *" placeholder="e.g. 500" type="number" {...fProps("quantity")} />
             <SL label="Unit" placeholder="Select unit" {...slProps("quantityUnit")}>
-              <SelectItem value="Liters">Liters (L)</SelectItem>
-              <SelectItem value="Kg">Kilograms (Kg)</SelectItem>
-              <SelectItem value="m³">Cubic Meters (m³)</SelectItem>
+              {lookups.capacityUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SL>
           </div>
 
           {/* Row 3: Batch + Linked Tank */}
           <div className="grid grid-cols-2 gap-4">
             <F label="Batch Number" placeholder="e.g. BATCH-2025-001" optional {...fProps("batch")} />
-            <SL label="Linked Tank ID" placeholder="Select tank" {...slProps("linkedTankId")}>
-              <SelectItem value="TK-1001">TK-1001 — Oxygen Storage Unit 1</SelectItem>
-              <SelectItem value="TK-1002">TK-1002 — Nitrogen Reserve Tank</SelectItem>
-              <SelectItem value="TK-1003">TK-1003 — LPG Storage Vessel A</SelectItem>
-              <SelectItem value="TK-1004">TK-1004 — CO₂ Bulk Tank</SelectItem>
-              <SelectItem value="TK-1005">TK-1005 — Argon Cylinder Bank</SelectItem>
+            <SL label="Linked Tank ID" placeholder="Select tank" optional {...slProps("linkedTankId")}>
+              <SelectItem value="none">None</SelectItem>
+              {tanks.map(t => (
+                <SelectItem key={t.tank_id} value={t.tank_id}>{t.tank_id} — {t.name}</SelectItem>
+              ))}
             </SL>
           </div>
         </div>
@@ -179,7 +227,7 @@ export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
             <X className="w-3.5 h-3.5" /> Cancel
           </Button>
           <Button size="sm" onClick={() => handleSubmit("save")} className="bg-blue-600 hover:bg-blue-700 gap-1.5 h-8">
-            <Save className="w-3.5 h-3.5" /> Save Draft
+            <Save className="w-3.5 h-3.5" /> Save
           </Button>
           <Button size="sm" onClick={() => handleSubmit("post")} className="bg-green-600 hover:bg-green-700 gap-1.5 h-8">
             <Send className="w-3.5 h-3.5" /> Post
@@ -200,7 +248,7 @@ export function AddProductionPage({ onAdd, onCancel, initialData = null }) {
           <div className="flex items-start gap-2">
             <div className="bg-blue-100 rounded p-1 mt-0.5 shrink-0"><Save className="w-3 h-3 text-blue-600" /></div>
             <div>
-              <p className="text-xs font-semibold text-slate-700">Save Draft</p>
+              <p className="text-xs font-semibold text-slate-700">Save</p>
               <p className="text-xs text-slate-500 mt-0.5">Saves the entry. You can edit it later.</p>
             </div>
           </div>

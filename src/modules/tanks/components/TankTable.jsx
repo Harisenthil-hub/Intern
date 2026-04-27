@@ -50,30 +50,30 @@ export function TankTable({ tanks, onView }) {
         <TableBody>
           {tanks.map((tank, index) => (
             <TableRow key={index} className="hover:bg-blue-50/40 transition-colors border-b border-slate-50 last:border-0">
-              <TableCell className="font-mono text-xs text-slate-500 py-2.5">{tank.tankId}</TableCell>
+              <TableCell className="font-mono text-xs text-slate-500 py-2.5">{tank.tank_id}</TableCell>
               <TableCell className="font-semibold text-sm text-slate-800 py-2.5">{tank.name}</TableCell>
               <TableCell className="py-2.5">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${gasColors[tank.gasType] || "bg-slate-100 text-slate-600"}`}>
-                  {tank.gasType || "—"}
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${gasColors[tank.gas_type] || "bg-slate-100 text-slate-600"}`}>
+                  {tank.gas_type || "—"}
                 </span>
               </TableCell>
-              <TableCell className="text-sm text-slate-700 py-2.5">{tank.capacity || "—"}</TableCell>
+              <TableCell className="text-sm text-slate-700 py-2.5">{tank.capacity_value + " " + tank.capacity_unit || "—"}</TableCell>
               <TableCell className="text-sm text-slate-600 py-2.5">{tank.location || "—"}</TableCell>
-              <TableCell className="text-sm text-slate-600 py-2.5">{tank.minLevel || "—"}</TableCell>
-              <TableCell className="text-sm text-slate-600 py-2.5">{tank.maxLevel || "—"}</TableCell>
+              <TableCell className="text-sm text-slate-600 py-2.5">{tank.min_level || "—"}</TableCell>
+              <TableCell className="text-sm text-slate-600 py-2.5">{tank.max_level || "—"}</TableCell>
               <TableCell className="py-2.5">
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyle[tank.status] || "bg-slate-100 text-slate-600"}`}>
                   {tank.status || "Active"}
                 </span>
               </TableCell>
               <TableCell className="py-2.5">
-                {tank._mode === "post" ? (
+                {tank.isPosted === 1 || tank.is_posted === 1 ? (
                   <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full w-fit">
                     <Lock className="w-2.5 h-2.5" /> Posted
                   </span>
                 ) : (
                   <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full w-fit block">
-                    Draft
+                    Saved
                   </span>
                 )}
               </TableCell>
