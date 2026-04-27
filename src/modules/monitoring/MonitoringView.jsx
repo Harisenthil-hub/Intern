@@ -1,41 +1,93 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchApi } from "@/lib/api";
 import { TankCard } from "./components/TankCard";
 import { AddLevelEntryPage } from "./components/AddLevelEntryPage";
 import { Droplets, AlertTriangle, Lock, Pencil, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const INITIAL_TANKS = [
-  { tankId: "TK-1001", name: "Oxygen Storage Unit 1", capacity: 5000, level: 3900, gasType: "Oxygen",  location: "Plant A - Zone 1" },
-  { tankId: "TK-1002", name: "Nitrogen Reserve Tank",  capacity: 8000, level: 1800, gasType: "Nitrogen",location: "Plant A - Zone 2" },
-  { tankId: "TK-1003", name: "LPG Storage Vessel A",   capacity: 3000, level: 800,  gasType: "LPG",     location: "Plant B - Zone 1" },
-];
 
-const INITIAL_ENTRIES = [
-  { entryId: "ENT-3001", tankId: "TK-1001", datetime: "19 Apr 2025", openingLevel: "4000", quantityAdded: "0",   quantityIssued: "500",  closingLevel: 3500, measurementMethod: "Sensor",      _mode: "post" },
-  { entryId: "ENT-3002", tankId: "TK-1002", datetime: "18 Apr 2025", openingLevel: "2200", quantityAdded: "0",   quantityIssued: "400",  closingLevel: 1800, measurementMethod: "Manual Dip",  _mode: "post" },
-  { entryId: "ENT-3003", tankId: "TK-1003", datetime: "18 Apr 2025", openingLevel: "1100", quantityAdded: "200", quantityIssued: "500",  closingLevel: 800,  measurementMethod: "Flow Meter",  _mode: "post" },
-  { entryId: "ENT-3004", tankId: "TK-1001", datetime: "17 Apr 2025", openingLevel: "4500", quantityAdded: "0",   quantityIssued: "500",  closingLevel: 4000, measurementMethod: "Manual Dip",  _mode: "save" },
-];
 
 export function MonitoringView() {
-  const [tanks, setTanks] = useState(INITIAL_TANKS);
-  const [entries, setEntries] = useState(INITIAL_ENTRIES);
+  const [tanks, setTanks] = useState([]);
+  const [entries, setEntries] = useState([]);
   const [viewMode, setViewMode] = useState("grid"); // grid | add | edit
   const [selectedTank, setSelectedTank] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
 
-  const handleUpdate = (updatedTank) => {
+  const fetchData = async () => {
+    try {
+      const tanksData = await fetchApi("/monitoring/tanks");
+      const entriesData = await fetchApi("/monitoring/entries");
+      
+      setTanks(tanksData.map(t => ({
+        ...t,
+        tankId: t.tank_id,
+        capacity: t.capacity_value,
+        level: t.current_level,
+        gasType: t.gas_type,
+        capacityUnit: t.capacity_unit,
+      })));
+      
+      setEntries(entriesData.map(e => ({
+        ...e,
+        entryId: e.entry_id,
+        tankId: e.tank_id,
+        datetime: e.date,
+        openingLevel: e.opening_level,
+        quantityAdded: e.quantity_added,
+        quantityIssued: e.quantity_issued,
+        closingLevel: e.closing_level,
+        measurementMethod: e.measurement_method,
+        isPosted: e.is_posted
+      })));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const calculateNextId = (prefix, list, idField) => {
+    if (!list || list.length === 0) return `${prefix}-3001`;
+    const ids = list.map(item => {
+      const parts = (item[idField] || "").split("-");
+      return parts.length === 2 ? parseInt(parts[1], 10) : 0;
+    }).filter(n => !isNaN(n));
+    const max = Math.max(3000, ...ids);
+    return `${prefix}-${max + 1}`;
+  };
+
+  const handleUpdate = async (updatedTank) => {
     const entry = updatedTank._entry;
     if (entry) {
-      if (selectedEntry) {
-        // editing existing entry
-        setEntries((prev) => prev.map((e) => e.entryId === entry.entryId ? entry : e));
-      } else {
-        setEntries((prev) => [...prev, entry]);
+      try {
+        const parsedDate = new Date(entry.datetime);
+        const isoDate = !isNaN(parsedDate) 
+          ? `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`
+          : entry.datetime;
+        
+        const payload = {
+          entry_id: entry.entryId || entry.entry_id,
+          tank_id: entry.tankId || entry.tank_id,
+          date: isoDate,
+          opening_level: Number(entry.openingLevel || entry.opening_level),
+          quantity_added: Number(entry.quantityAdded || entry.quantity_added || 0),
+          quantity_issued: Number(entry.quantityIssued || entry.quantity_issued || 0),
+          measurement_method: entry.measurementMethod || entry.measurement_method,
+          is_posted: entry.isPosted !== undefined ? entry.isPosted : entry.is_posted
+        };
+        
+        if (selectedEntry) {
+          await fetchApi(`/monitoring/entries/${payload.entry_id}`, { method: "PUT", body: JSON.stringify(payload) });
+        } else {
+          await fetchApi("/monitoring/entries", { method: "POST", body: JSON.stringify(payload) });
+        }
+        fetchData();
+      } catch (e) {
+        console.error(e);
       }
-      setTanks((prev) =>
-        prev.map((t) => (t.tankId === updatedTank.tankId ? { ...t, level: updatedTank.level } : t))
-      );
     }
     setViewMode("grid");
     setSelectedEntry(null);
@@ -44,6 +96,7 @@ export function MonitoringView() {
   if ((viewMode === "add" || viewMode === "edit") && selectedTank) {
     return (
       <AddLevelEntryPage
+        nextId={calculateNextId("ENT", entries, "entryId")}
         tank={selectedTank}
         initialData={viewMode === "edit" ? selectedEntry : null}
         onUpdate={handleUpdate}
@@ -110,16 +163,16 @@ export function MonitoringView() {
                   <td className="px-4 py-2.5 text-sm font-semibold text-teal-700">{entry.closingLevel} L</td>
                   <td className="px-4 py-2.5 text-xs text-slate-500">{entry.measurementMethod}</td>
                   <td className="px-4 py-2.5">
-                    {entry._mode === "post" ? (
+                    {entry.isPosted === 1 || entry.is_posted === 1 ? (
                       <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full w-fit">
                         <Lock className="w-2.5 h-2.5" /> Posted
                       </span>
                     ) : (
-                      <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full w-fit block">Draft</span>
+                      <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full w-fit block">Saved</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    {entry._mode !== "post" ? (
+                    {(entry.isPosted !== 1 && entry.is_posted !== 1) ? (
                       <Button
                         variant="outline"
                         size="sm"

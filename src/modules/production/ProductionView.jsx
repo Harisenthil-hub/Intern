@@ -1,37 +1,99 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ProductionTable } from "./components/ProductionTable";
 import { AddProductionPage } from "./components/AddProductionPage";
 import { ViewProductionPage } from "./components/ViewProductionPage";
 import { Plus, Flame } from "lucide-react";
 
-const DUMMY_PRODUCTION = [
-  { productionId: "PROD-2001", date: "19 Apr 2025", plant: "Plant A", gasType: "Oxygen",   quantity: "1200", quantityUnit: "Liters", quantityDisplay: "1200 Liters", batch: "BATCH-2025-041", linkedTankId: "TK-1001", _mode: "post" },
-  { productionId: "PROD-2002", date: "18 Apr 2025", plant: "Plant A", gasType: "Nitrogen",  quantity: "800",  quantityUnit: "Liters", quantityDisplay: "800 Liters",  batch: "BATCH-2025-040", linkedTankId: "TK-1002", _mode: "post" },
-  { productionId: "PROD-2003", date: "17 Apr 2025", plant: "Plant B", gasType: "LPG",       quantity: "500",  quantityUnit: "Kg",     quantityDisplay: "500 Kg",      batch: "BATCH-2025-039", linkedTankId: "TK-1003", _mode: "post" },
-  { productionId: "PROD-2004", date: "17 Apr 2025", plant: "Plant A", gasType: "Oxygen",   quantity: "950",  quantityUnit: "Liters", quantityDisplay: "950 Liters",  batch: "BATCH-2025-038", linkedTankId: "TK-1001", _mode: "save" },
-  { productionId: "PROD-2005", date: "16 Apr 2025", plant: "Plant C", gasType: "Argon",     quantity: "300",  quantityUnit: "m³",     quantityDisplay: "300 m³",      batch: "BATCH-2025-037", linkedTankId: "TK-1005", _mode: "save" },
-];
+
 
 export function ProductionView() {
-  const [data, setData] = useState(DUMMY_PRODUCTION);
+  const [data, setData] = useState([]);
   const [viewMode, setViewMode] = useState("list"); // list | add | view | edit
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const handleAdd = (entry) => {
-    setData((prev) => [...prev, entry]);
-    setViewMode("list");
+  const fetchProduction = async () => {
+    try {
+      const result = await fetchApi("/production");
+      setData(result.map(p => ({
+        ...p,
+        productionId: p.production_id,
+        gasType: p.gas_type,
+        quantityUnit: p.quantity_unit,
+        quantityDisplay: p.quantity_display,
+        linkedTankId: p.linked_tank_id,
+        isPosted: p.is_posted
+      })));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleEdit = (updatedEntry) => {
-    setData((prev) =>
-      prev.map((d) => (d.productionId === updatedEntry.productionId ? updatedEntry : d))
-    );
-    setViewMode("list");
+  useEffect(() => {
+    fetchProduction();
+  }, []);
+
+  const calculateNextId = (prefix, list, idField) => {
+    if (!list || list.length === 0) return `${prefix}-2001`;
+    const ids = list.map(item => {
+      const parts = (item[idField] || "").split("-");
+      return parts.length === 2 ? parseInt(parts[1], 10) : 0;
+    }).filter(n => !isNaN(n));
+    const max = Math.max(2000, ...ids);
+    return `${prefix}-${max + 1}`;
+  };
+
+  const handleAdd = async (entry) => {
+    try {
+      const parsedDate = new Date(entry.date);
+      const isoDate = !isNaN(parsedDate) 
+        ? `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`
+        : entry.date;
+
+      await fetchApi("/production", {
+        method: "POST",
+        body: JSON.stringify({
+          ...entry,
+          date: isoDate,
+          production_id: entry.productionId,
+          gas_type: entry.gasType,
+          quantity_unit: entry.quantityUnit,
+          linked_tank_id: entry.linkedTankId || null,
+          is_posted: entry.isPosted,
+        })
+      });
+      fetchProduction();
+      setViewMode("list");
+    } catch (e) { console.error(e); }
+  };
+
+  const handleEdit = async (updatedEntry) => {
+    try {
+      const parsedDate = new Date(updatedEntry.date);
+      const isoDate = !isNaN(parsedDate) 
+        ? `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`
+        : updatedEntry.date;
+
+      await fetchApi(`/production/${updatedEntry.production_id || updatedEntry.productionId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ...updatedEntry,
+          date: isoDate,
+          production_id: updatedEntry.productionId || updatedEntry.production_id,
+          gas_type: updatedEntry.gasType || updatedEntry.gas_type,
+          quantity_unit: updatedEntry.quantityUnit || updatedEntry.quantity_unit,
+          linked_tank_id: updatedEntry.linkedTankId || null,
+          is_posted: updatedEntry.isPosted !== undefined ? updatedEntry.isPosted : updatedEntry.is_posted,
+        })
+      });
+      fetchProduction();
+      setViewMode("list");
+    } catch (e) { console.error(e); }
   };
 
   if (viewMode === "add") {
-    return <AddProductionPage onAdd={handleAdd} onCancel={() => setViewMode("list")} />;
+    return <AddProductionPage nextId={calculateNextId("PROD", data, "production_id")} onAdd={handleAdd} onCancel={() => setViewMode("list")} />;
   }
 
   if (viewMode === "edit" && selectedItem) {
