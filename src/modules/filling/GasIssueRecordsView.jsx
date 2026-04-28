@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -131,6 +132,9 @@ export function GasIssueRecordsView() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Gas Issue Details</DialogTitle>
+            <DialogDescription>
+              Review the selected issue record before closing the dialog.
+            </DialogDescription>
           </DialogHeader>
           {selectedRecord ? (
             <div className="space-y-4 text-sm text-slate-700">

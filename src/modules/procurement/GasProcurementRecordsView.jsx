@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, Lock, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -22,8 +23,12 @@ import { useProcurementStore } from "./ProcurementStore";
 
 export function GasProcurementRecordsView() {
   const navigate = useNavigate();
-  const { records } = useProcurementStore();
+  const { records, isLoading, loadRecords } = useProcurementStore();
   const [selectedRecord, setSelectedRecord] = useState(null);
+
+  useEffect(() => {
+    loadRecords().catch(() => {});
+  }, [loadRecords]);
 
   const statusBadgeClass = (status) =>
     status === "posted" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700";
@@ -42,7 +47,11 @@ export function GasProcurementRecordsView() {
       </header>
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {records.length === 0 ? (
+        {isLoading && records.length === 0 ? (
+          <div className="px-6 py-16 text-center text-sm text-slate-500">
+            Loading procurement records...
+          </div>
+        ) : records.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-slate-500">
             No procurement records yet
           </div>
@@ -130,6 +139,9 @@ export function GasProcurementRecordsView() {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Gas Procurement Details</DialogTitle>
+            <DialogDescription>
+              Review the selected procurement record before returning to the table.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedRecord ? (

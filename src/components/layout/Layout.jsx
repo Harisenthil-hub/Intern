@@ -13,7 +13,9 @@ const PAGE_TITLES = {
   "/procurement/new": "Gas Procurement Entry",
   "/issue-to-filling": "Gas Issue to Filling",
   "/loss-leakage-monitoring": "Loss / Leakage Records",
-  "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring"}
+  "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring",
+  "/issue-to-filling/new": "Gas Issue Entry",
+};
 const PAGES = {
   "/": { title: "Dashboard", desc: "System overview & quick stats" },
   "/tanks": {
@@ -28,6 +30,30 @@ const PAGES = {
     title: "Gas Production Entry",
     desc: "Record internally generated gas production",
   },
+  "/procurement": {
+    title: "Gas Procurement Records",
+    desc: "Review and manage bulk gas purchases",
+  },
+  "/procurement/new": {
+    title: "Gas Procurement Entry",
+    desc: "Capture a new procurement or finalize a draft entry",
+  },
+  "/issue-to-filling": {
+    title: "Gas Issue to Filling",
+    desc: "Track transfers from bulk storage to filling operations",
+  },
+  "/issue-to-filling/new": {
+    title: "Gas Issue Entry",
+    desc: "Record a new issue from storage to filling",
+  },
+  "/loss-leakage-monitoring": {
+    title: "Loss / Leakage Records",
+    desc: "Monitor inventory variance and investigate losses",
+  },
+  "/loss-leakage-monitoring/new": {
+    title: "Loss / Leakage Monitoring",
+    desc: "Create and review loss or leakage entries",
+  },
 };
 
 const BREADCRUMBS = {
@@ -41,6 +67,33 @@ const BREADCRUMBS = {
     { label: "Inventory" },
     { label: "Gas Production", href: "/production" },
   ],
+  "/procurement": [
+    { label: "Operations" },
+    { label: "Gas Procurement", href: "/procurement" },
+  ],
+  "/procurement/new": [
+    { label: "Operations" },
+    { label: "Gas Procurement", href: "/procurement" },
+    { label: "New Entry" },
+  ],
+  "/issue-to-filling": [
+    { label: "Operations" },
+    { label: "Issue to Filling", href: "/issue-to-filling" },
+  ],
+  "/issue-to-filling/new": [
+    { label: "Operations" },
+    { label: "Issue to Filling", href: "/issue-to-filling" },
+    { label: "New Entry" },
+  ],
+  "/loss-leakage-monitoring": [
+    { label: "Operations" },
+    { label: "Loss / Leakage", href: "/loss-leakage-monitoring" },
+  ],
+  "/loss-leakage-monitoring/new": [
+    { label: "Operations" },
+    { label: "Loss / Leakage", href: "/loss-leakage-monitoring" },
+    { label: "New Entry" },
+  ],
 };
 
 export function Layout() {
@@ -48,17 +101,32 @@ export function Layout() {
   const isProcurementEditRoute = /^\/procurement\/[^/]+\/edit$/.test(
     location.pathname,
   );
+  const isIssueEditRoute = /^\/issue-to-filling\/[^/]+\/edit$/.test(location.pathname);
   const isLossLeakageEditRoute = /^\/loss-leakage-monitoring\/[^/]+\/edit$/.test(
     location.pathname,
   );
   const pageTitle =
     isProcurementEditRoute
       ? "Gas Procurement Entry"
+      : isIssueEditRoute
+        ? "Gas Issue Entry"
+        : isLossLeakageEditRoute
+          ? "Loss / Leakage Monitoring"
+          : PAGE_TITLES[location.pathname] || "Dashboard";
+  const page = isProcurementEditRoute
+    ? PAGES["/procurement/new"]
+    : isIssueEditRoute
+      ? PAGES["/issue-to-filling/new"]
       : isLossLeakageEditRoute
-        ? "Loss / Leakage Monitoring"
-        : PAGE_TITLES[location.pathname] || "Dashboard";
-  const page = PAGES[location.pathname] || PAGES["/"];
-  const crumbs = BREADCRUMBS[location.pathname] || BREADCRUMBS["/"];
+        ? PAGES["/loss-leakage-monitoring/new"]
+        : PAGES[location.pathname] || PAGES["/"];
+  const crumbs = isProcurementEditRoute
+    ? [...BREADCRUMBS["/procurement"], { label: "Edit Entry" }]
+    : isIssueEditRoute
+      ? [...BREADCRUMBS["/issue-to-filling"], { label: "Edit Entry" }]
+      : isLossLeakageEditRoute
+        ? [...BREADCRUMBS["/loss-leakage-monitoring"], { label: "Edit Entry" }]
+        : BREADCRUMBS[location.pathname] || BREADCRUMBS["/"];
 
   return (
     <TooltipProvider>

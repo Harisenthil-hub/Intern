@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -134,6 +135,9 @@ export function LossLeakageRecordsView() {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Loss / Leakage Record Details</DialogTitle>
+            <DialogDescription>
+              Review the selected loss or leakage record before closing the dialog.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedRecord ? (
