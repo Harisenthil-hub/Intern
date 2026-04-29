@@ -24,3 +24,6 @@ Check the render method of `TableBody`. It was passed a child from LossLeakageRe
 [2m4:11:38 pm[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mEach child in a list should have a unique "key" prop.
 
 Check the render method of `TableBody`. It was passed a child from LossLeakageRecordsView. See https://react.dev/link/warning-keys for more information.
+[31mfailed to load config from C:\Users\ANIRUDH VISVESVARAN\Desktop\colab\Intern\vite.config.js[39m
+[2m4:38:12 pm[22m [31m[1m[vite][22m[39m tailwindcss is not defined
+[2m4:38:12 pm[22m [31m[1m[vite][22m[39m server restart failed

@@ -14,3 +14,6 @@ Check the render method of `TableBody`. It was passed a child from LossLeakageRe
     at createRecord (http://127.0.0.1:5174/src/modules/lossLeakage/LossLeakageStore.jsx?t=1777459420667:74:11)
     at async handleSubmit (http://127.0.0.1:5174/src/pages/LossLeakageMonitoringEntry.jsx?t=1777459420667:28:5)
     at async handleSave (http://127.0.0.1:5174/src/modules/lossLeakage/LossLeakageMonitoringView.jsx:224:4)
+[31mfailed to load config from C:\Users\ANIRUDH VISVESVARAN\Desktop\colab\Intern\vite.config.js[39m
+[2m4:38:12 pm[22m [31m[1m[vite][22m[39m tailwindcss is not defined
+[2m4:38:12 pm[22m [31m[1m[vite][22m[39m server restart failed
