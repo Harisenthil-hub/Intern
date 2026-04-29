@@ -6,17 +6,17 @@ const LossLeakageStoreContext = createContext(null);
 // Convert snake_case from API to camelCase for frontend
 const apiToCamelCase = (apiRecord) => {
   return {
-    id: apiRecord.record_code,
-    recordCode: apiRecord.record_code,
-    tankId: apiRecord.tank_id,
+    id: apiRecord.id || apiRecord.record_code || apiRecord.recordCode,
+    recordCode: apiRecord.id || apiRecord.record_code || apiRecord.recordCode,
+    tankId: apiRecord.tankId || apiRecord.tank_id,
     date: apiRecord.date,
-    expectedQuantity: apiRecord.expected_quantity,
-    actualQuantity: apiRecord.actual_quantity,
-    lossQuantity: apiRecord.loss_quantity,
+    expectedQuantity: apiRecord.expectedQuantity ?? apiRecord.expected_quantity,
+    actualQuantity: apiRecord.actualQuantity ?? apiRecord.actual_quantity,
+    lossQuantity: apiRecord.lossQuantity ?? apiRecord.loss_quantity,
     reason: apiRecord.reason || "",
     status: apiRecord.status,
-    createdAt: apiRecord.created_at,
-    updatedAt: apiRecord.updated_at,
+    createdAt: apiRecord.createdAt || apiRecord.created_at,
+    updatedAt: apiRecord.updatedAt || apiRecord.updated_at,
   };
 };
 

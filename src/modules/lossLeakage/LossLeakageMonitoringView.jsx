@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchApi } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const TANK_OPTIONS = [
-  { id: "TNK-001", capacity: 1000, currentLevel: 600 },
-  { id: "TNK-002", capacity: 1000, currentLevel: 400 },
-];
 
 const REASONS = ["Leakage", "Measurement Error", "Evaporation"];
 
@@ -94,12 +90,40 @@ export function LossLeakageMonitoringView({
   const [errors, setErrors] = useState({});
   const [feedbackMessage, setFeedbackMessage] = useState(INITIAL_FEEDBACK);
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+  const [tanks, setTanks] = useState([]);
   const isEditMode = mode === "edit";
 
   const selectedTank = useMemo(
-    () => TANK_OPTIONS.find((tank) => tank.id === form.tankId) ?? null,
-    [form.tankId],
+    () => tanks.find((tank) => tank.id === form.tankId) ?? null,
+    [form.tankId, tanks],
   );
+
+  useEffect(() => {
+    const loadTanks = async () => {
+      try {
+        const response = await fetchApi("/tanks/active");
+        if (!response.ok) {
+          setTanks([]);
+          return;
+        }
+
+        const result = await response.json().catch(() => ([]));
+        const data = Array.isArray(result) ? result : Array.isArray(result.data) ? result.data : [];
+
+        setTanks(
+          data.map((tank) => ({
+            id: tank.tank_id,
+            capacity: Number(tank.capacity_value) || 0,
+            currentLevel: Number(tank.current_level) || 0,
+          })),
+        );
+      } catch {
+        setTanks([]);
+      }
+    };
+
+    loadTanks();
+  }, []);
 
   useEffect(() => {
     const nextForm = getInitialFormState(initialData);
@@ -115,6 +139,7 @@ export function LossLeakageMonitoringView({
   const canEnterActual = expectedValue !== null && expectedValue > 0;
   const canSelectReason = hasLossCalculation && lossValue > 0;
   const showNoReasonHint = hasLossCalculation && lossValue === 0;
+  const hasAvailableTanks = tanks.length > 0;
 
   const validateForm = (nextForm) => {
     const nextErrors = {};
@@ -279,6 +304,7 @@ export function LossLeakageMonitoringView({
   };
 
   const isFormValid =
+    hasAvailableTanks &&
     Boolean(form.tankId) &&
     form.expectedQuantity !== "" &&
     form.actualQuantity !== "" &&
@@ -360,19 +386,22 @@ export function LossLeakageMonitoringView({
                 <Select
                   value={form.tankId}
                   onValueChange={(value) => updateField("tankId", value)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !hasAvailableTanks}
                 >
                   <SelectTrigger id="loss-tank-id" className="w-full">
-                    <SelectValue placeholder="Select tank ID" />
+                    <SelectValue placeholder={hasAvailableTanks ? "Select tank ID" : "No active tanks"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {TANK_OPTIONS.map((tank) => (
+                    {tanks.map((tank) => (
                       <SelectItem key={tank.id} value={tank.id}>
                         {tank.id}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {!hasAvailableTanks && (
+                  <p className="text-sm text-rose-600">No active tanks are available right now.</p>
+                )}
               </div>
 
               <div className="space-y-3">
