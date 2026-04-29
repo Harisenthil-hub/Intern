@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLookups } from "@/hooks/useLookups";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -45,13 +46,25 @@ function SL({ label, name, children, defaultVal, value, onValueChange, error, pl
   );
 }
 
-export function AddTankPage({ onAdd, onCancel, initialData = null }) {
+export function AddTankPage({ onAdd, onCancel, initialData = null, nextId = "TK-1001" }) {
+  const { lookups, loading } = useLookups();
   const isEdit = !!initialData;
   const [form, setForm] = useState(
     initialData
-      ? { ...initialData }
+      ? {
+          tank_id: initialData.tank_id || initialData.tankId,
+          name: initialData.name || "",
+          gasType: initialData.gas_type || initialData.gasType || "",
+          capacityValue: initialData.capacity_value || initialData.capacityValue || "",
+          capacityUnit: initialData.capacity_unit || initialData.capacityUnit || "Liters",
+          location: initialData.location || "",
+          minLevel: initialData.min_level || initialData.minLevel || "",
+          maxLevel: initialData.max_level || initialData.maxLevel || "",
+          calibrationRef: initialData.calibration_ref || initialData.calibrationRef || "",
+          status: initialData.status || "Active",
+        }
       : {
-          tankId: `TK-${++tankCounter}`,
+          tank_id: nextId,
           name: "",
           gasType: "",
           capacityValue: "",
@@ -63,6 +76,13 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
           status: "Active",
         }
   );
+
+  useEffect(() => {
+    if (!isEdit && nextId) {
+      setForm(prev => ({ ...prev, tank_id: nextId }));
+    }
+  }, [nextId, isEdit]);
+
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -91,7 +111,7 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
     onAdd({
       ...form,
       capacity: form.capacityValue ? `${form.capacityValue} ${form.capacityUnit}` : form.capacity,
-      _mode: mode,
+      isPosted: mode === "save" ? 0 : 1,
     });
   };
 
@@ -112,10 +132,10 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
               {isEdit ? `Edit Tank — ${form.name}` : "Register New Tank"}
             </h2>
             <p className="text-blue-100 text-xs">
-              {isEdit ? "Update fields below. Save keeps it as Draft; Post locks the record." : "Fill all required fields to register a storage tank"}
+              {isEdit ? "Update fields below. Save keeps it as Saved; Post locks the record." : "Fill all required fields to register a storage tank"}
             </p>
           </div>
-          <span className="ml-auto bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-mono">{form.tankId}</span>
+          <span className="ml-auto bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-mono">{form.tank_id}</span>
         </div>
 
         {/* Form fields */}
@@ -123,21 +143,14 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
           <div className="grid grid-cols-2 gap-4">
             <F label="Tank Name *" placeholder="e.g. Oxygen Storage Unit 1" {...fProps("name")} />
             <SL label="Gas Type *" placeholder="Select gas type" {...slProps("gasType")}>
-              <SelectItem value="Oxygen">Oxygen (O₂)</SelectItem>
-              <SelectItem value="Nitrogen">Nitrogen (N₂)</SelectItem>
-              <SelectItem value="LPG">LPG</SelectItem>
-              <SelectItem value="CO2">Carbon Dioxide (CO₂)</SelectItem>
-              <SelectItem value="Argon">Argon (Ar)</SelectItem>
-              <SelectItem value="Hydrogen">Hydrogen (H₂)</SelectItem>
+              {lookups.gasTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
             </SL>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <F label="Capacity *" placeholder="e.g. 5000" type="number" {...fProps("capacityValue")} />
             <SL label="Unit" defaultVal="Liters" {...slProps("capacityUnit")}>
-              <SelectItem value="Liters">Liters (L)</SelectItem>
-              <SelectItem value="Kg">Kilograms (Kg)</SelectItem>
-              <SelectItem value="m³">Cubic Meters (m³)</SelectItem>
+              {lookups.capacityUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SL>
             <F label="Location (Plant) *" placeholder="e.g. Plant A - Zone 2" {...fProps("location")} />
           </div>
@@ -150,9 +163,7 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
           <div className="grid grid-cols-2 gap-4">
             <F label="Calibration Chart Ref" placeholder="e.g. CAL-2024-001" optional {...fProps("calibrationRef")} />
             <SL label="Status" defaultVal="Active" {...slProps("status")}>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Inactive">Inactive</SelectItem>
-              <SelectItem value="Maintenance">Under Maintenance</SelectItem>
+              {lookups.tankStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SL>
           </div>
         </div>
@@ -163,7 +174,7 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
             <X className="w-3.5 h-3.5" /> Cancel
           </Button>
           <Button size="sm" onClick={() => handleSubmit("save")} className="bg-blue-600 hover:bg-blue-700 gap-1.5 h-8">
-            <Save className="w-3.5 h-3.5" /> Save Draft
+            <Save className="w-3.5 h-3.5" /> Save
           </Button>
           <Button size="sm" onClick={() => handleSubmit("post")} className="bg-green-600 hover:bg-green-700 gap-1.5 h-8">
             <Send className="w-3.5 h-3.5" /> Post
@@ -176,7 +187,7 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
         {/* Current entry ID */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Entry Reference</p>
-          <p className="font-mono text-lg font-bold text-blue-600">{form.tankId}</p>
+          <p className="font-mono text-lg font-bold text-blue-600">{form.tank_id}</p>
           <p className="text-xs text-slate-400 mt-1">Auto-generated Tank ID</p>
         </div>
 
@@ -188,7 +199,7 @@ export function AddTankPage({ onAdd, onCancel, initialData = null }) {
               <Save className="w-3 h-3 text-blue-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-700">Save Draft</p>
+              <p className="text-xs font-semibold text-slate-700">Save</p>
               <p className="text-xs text-slate-500 mt-0.5">Saves the entry. You can come back and edit it later.</p>
             </div>
           </div>

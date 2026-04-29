@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, parse } from "date-fns";
+import { useLookups } from "@/hooks/useLookups";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
@@ -10,24 +11,45 @@ import { CalendarIcon, Droplets, Save, Send, X, Pencil, ArrowRight, Info } from 
 
 let entryCounter = 3005;
 
-export function AddLevelEntryPage({ tank, onUpdate, onCancel, initialData = null }) {
+export function AddLevelEntryPage({ tank, onUpdate, onCancel, initialData = null, nextId = "ENT-3001" }) {
+  const { lookups, loading } = useLookups();
   const isEdit = !!initialData;
   const [form, setForm] = useState(
     initialData
-      ? { ...initialData }
+      ? {
+          entryId: initialData.entry_id || initialData.entryId,
+          tankId: initialData.tank_id || initialData.tankId || tank?.tank_id || tank?.tankId || tank?.name || "",
+          openingLevel: String(initialData.opening_level ?? initialData.openingLevel ?? tank?.current_level ?? tank?.level ?? ""),
+          quantityAdded: initialData.quantity_added ?? initialData.quantityAdded ?? "",
+          quantityIssued: initialData.quantity_issued ?? initialData.quantityIssued ?? "",
+          measurementMethod: initialData.measurement_method || initialData.measurementMethod || "Manual Dip",
+        }
       : {
-          entryId: `ENT-${++entryCounter}`,
-          tankId: tank?.tankId || tank?.name || "",
-          openingLevel: String(tank?.level ?? ""),
+          entryId: nextId,
+          tankId: tank?.tank_id || tank?.tankId || tank?.name || "",
+          openingLevel: String(tank?.current_level ?? tank?.level ?? ""),
           quantityAdded: "",
           quantityIssued: "",
           measurementMethod: "Manual Dip",
         }
   );
+
+  useEffect(() => {
+    if (!isEdit && nextId) {
+      setForm(prev => ({ ...prev, entryId: nextId }));
+    }
+  }, [nextId, isEdit]);
+
   const [datetime, setDatetime] = useState(
     initialData?.datetime
-      ? (() => { try { return parse(initialData.datetime, "dd MMM yyyy", new Date()); } catch { return undefined; } })()
-      : undefined
+      ? (() => { 
+          try { 
+            const d = new Date(initialData.datetime); 
+            if (!isNaN(d)) return d;
+            return parse(initialData.datetime, "dd MMM yyyy", new Date()); 
+          } catch { return undefined; } 
+        })()
+      : new Date()
   );
   const [errors, setErrors] = useState({});
 
@@ -51,14 +73,18 @@ export function AddLevelEntryPage({ tank, onUpdate, onCancel, initialData = null
   const handleSubmit = (mode) => {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
+    const d = datetime || (form.datetime ? new Date(form.datetime) : null);
+    const isoDate = d
+      ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      : form.datetime;
     onUpdate({
       ...tank,
       level: closingLevel,
       _entry: {
         ...form,
-        datetime: datetime ? format(datetime, "dd MMM yyyy") : form.datetime,
+        datetime: isoDate,
         closingLevel,
-        _mode: mode,
+        isPosted: mode === "save" ? 0 : 1,
       },
     });
   };
@@ -80,7 +106,7 @@ export function AddLevelEntryPage({ tank, onUpdate, onCancel, initialData = null
               {isEdit ? "Edit Level Entry" : `Level Entry — ${tank?.name}`}
             </h2>
             <p className="text-teal-100 text-xs">
-              {isEdit ? "Update fields. Save keeps as Draft; Post locks the record." : `${tank?.gasType} · ${tank?.location}`}
+              {isEdit ? "Update fields. Save keeps as Saved; Post locks the record." : `${tank?.gasType} · ${tank?.location}`}
             </p>
           </div>
           <span className="ml-auto bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-mono">{form.entryId}</span>
@@ -165,10 +191,7 @@ export function AddLevelEntryPage({ tank, onUpdate, onCancel, initialData = null
               <Select value={form.measurementMethod || "Manual Dip"} onValueChange={(v) => setForm((p) => ({ ...p, measurementMethod: v }))}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Manual Dip">Manual Dip</SelectItem>
-                  <SelectItem value="Sensor">Sensor (IoT)</SelectItem>
-                  <SelectItem value="Flow Meter">Flow Meter</SelectItem>
-                  <SelectItem value="Visual Gauge">Visual Gauge</SelectItem>
+                  {lookups.measurementMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -180,7 +203,7 @@ export function AddLevelEntryPage({ tank, onUpdate, onCancel, initialData = null
             <X className="w-3.5 h-3.5" /> Cancel
           </Button>
           <Button size="sm" onClick={() => handleSubmit("save")} className="bg-blue-600 hover:bg-blue-700 gap-1.5 h-8">
-            <Save className="w-3.5 h-3.5" /> Save Draft
+            <Save className="w-3.5 h-3.5" /> Save
           </Button>
           <Button size="sm" onClick={() => handleSubmit("post")} className="bg-green-600 hover:bg-green-700 gap-1.5 h-8">
             <Send className="w-3.5 h-3.5" /> Post
@@ -228,7 +251,7 @@ export function AddLevelEntryPage({ tank, onUpdate, onCancel, initialData = null
           <div className="flex items-start gap-2">
             <div className="bg-blue-100 rounded p-1 mt-0.5 shrink-0"><Save className="w-3 h-3 text-blue-600" /></div>
             <div>
-              <p className="text-xs font-semibold text-slate-700">Save Draft</p>
+              <p className="text-xs font-semibold text-slate-700">Save</p>
               <p className="text-xs text-slate-500 mt-0.5">Saves the entry. You can edit it later.</p>
             </div>
           </div>

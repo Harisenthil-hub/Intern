@@ -51,12 +51,12 @@ export function ProductionTable({ data, onView }) {
               <TableCell className="text-xs font-mono text-slate-600 py-2.5">{item.batch || "—"}</TableCell>
               <TableCell className="text-xs font-mono text-slate-600 py-2.5">{item.linkedTankId || "—"}</TableCell>
               <TableCell className="py-2.5">
-                {item._mode === "post" ? (
+                {item.isPosted === 1 || item.is_posted === 1 ? (
                   <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full w-fit">
                     <Lock className="w-2.5 h-2.5" /> Posted
                   </span>
                 ) : (
-                  <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full w-fit block">Draft</span>
+                  <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full w-fit block">Saved</span>
                 )}
               </TableCell>
               <TableCell className="text-right py-2.5">

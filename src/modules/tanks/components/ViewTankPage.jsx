@@ -26,7 +26,7 @@ function Row({ label, value }) {
 
 export function ViewTankPage({ tank, onBack, onEdit }) {
   if (!tank) return null;
-  const isPosted = tank._mode === "post";
+  const isPosted = tank.is_posted === 1 || tank.isPosted === 1;
 
   return (
     <div className="grid grid-cols-3 gap-5">
@@ -47,17 +47,17 @@ export function ViewTankPage({ tank, onBack, onEdit }) {
               </span>
             ) : (
               <span className="bg-yellow-400 text-yellow-900 text-xs px-2.5 py-1 rounded-full font-semibold">
-                Draft
+                Saved
               </span>
             )}
-            <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-mono">{tank.tankId}</span>
+            <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-mono">{tank.tank_id}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 px-5 pt-4 pb-1">
-          {tank.gasType && (
-            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${gasColors[tank.gasType] || "bg-slate-100 text-slate-700"}`}>
-              {tank.gasType}
+          {tank.gas_type && (
+            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${gasColors[tank.gas_type] || "bg-slate-100 text-slate-700"}`}>
+              {tank.gas_type}
             </span>
           )}
           {tank.status && (
@@ -71,16 +71,16 @@ export function ViewTankPage({ tank, onBack, onEdit }) {
         <div className="px-5 pb-3 flex-1">
           <div className="grid grid-cols-2 gap-x-10 mt-2">
             <div>
-              <Row label="Tank ID" value={tank.tankId} />
+              <Row label="Tank ID" value={tank.tank_id} />
               <Row label="Tank Name" value={tank.name} />
-              <Row label="Gas Type" value={tank.gasType} />
-              <Row label="Capacity" value={tank.capacity} />
+              <Row label="Gas Type" value={tank.gas_type} />
+              <Row label="Capacity" value={tank.capacity_value + " " + tank.capacity_unit} />
             </div>
             <div>
               <Row label="Location" value={tank.location} />
-              <Row label="Min Level" value={tank.minLevel ? `${tank.minLevel} ${tank.capacityUnit || ""}` : null} />
-              <Row label="Max Level" value={tank.maxLevel ? `${tank.maxLevel} ${tank.capacityUnit || ""}` : null} />
-              <Row label="Calibration Ref" value={tank.calibrationRef} />
+              <Row label="Min Level" value={tank.min_level ? `${tank.min_level} ${tank.capacity_unit || ""}` : null} />
+              <Row label="Max Level" value={tank.max_level ? `${tank.max_level} ${tank.capacity_unit || ""}` : null} />
+              <Row label="Calibration Ref" value={tank.calibration_ref} />
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ export function ViewTankPage({ tank, onBack, onEdit }) {
             <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
               <Pencil className="w-5 h-5 text-yellow-600 shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-yellow-800">Draft</p>
+                <p className="text-sm font-semibold text-yellow-800">Saved</p>
                 <p className="text-xs text-yellow-700 mt-0.5">This record can still be edited or posted</p>
               </div>
             </div>
@@ -124,9 +124,9 @@ export function ViewTankPage({ tank, onBack, onEdit }) {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-2.5">
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Specifications</p>
           {[
-            { label: "Capacity", value: tank.capacity },
-            { label: "Min Level", value: tank.minLevel ? `${tank.minLevel} ${tank.capacityUnit || "L"}` : "—" },
-            { label: "Max Level", value: tank.maxLevel ? `${tank.maxLevel} ${tank.capacityUnit || "L"}` : "—" },
+            { label: "Capacity", value: tank.capacity_value + " " + tank.capacity_unit },
+            { label: "Min Level", value: tank.min_level ? `${tank.min_level} ${tank.capacity_unit || "L"}` : "—" },
+            { label: "Max Level", value: tank.max_level ? `${tank.max_level} ${tank.capacity_unit || "L"}` : "—" },
             { label: "Location", value: tank.location },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between items-center text-sm py-1 border-b border-slate-50 last:border-0">

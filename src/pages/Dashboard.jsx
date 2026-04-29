@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Container,
@@ -8,42 +9,9 @@ import {
   CheckCircle2,
   ChevronRight,
   Activity,
+  Loader2,
 } from "lucide-react";
-
-const stats = [
-  {
-    label: "Total Tanks",
-    value: "12",
-    icon: Container,
-    color: "blue",
-    change: "+2 this month",
-    trend: "up",
-  },
-  {
-    label: "Active Tanks",
-    value: "10",
-    icon: CheckCircle2,
-    color: "green",
-    change: "2 inactive",
-    trend: "neutral",
-  },
-  {
-    label: "Today's Production",
-    value: "3,200 L",
-    icon: Flame,
-    color: "orange",
-    change: "+12% vs yesterday",
-    trend: "up",
-  },
-  {
-    label: "Low Level Alerts",
-    value: "2",
-    icon: AlertTriangle,
-    color: "red",
-    change: "Requires attention",
-    trend: "warning",
-  },
-];
+import { fetchApi } from "@/lib/api";
 
 const colorMap = {
   blue: { bg: "bg-blue-50", icon: "bg-blue-600", text: "text-blue-600", border: "border-blue-100" },
@@ -53,35 +21,9 @@ const colorMap = {
 };
 
 const quickLinks = [
-  {
-    title: "Tank Master",
-    desc: "Manage bulk storage tanks and their specifications",
-    href: "/tanks",
-    icon: Container,
-    color: "blue",
-  },
-  {
-    title: "Tank Monitoring",
-    desc: "Track real-time inventory levels in storage tanks",
-    href: "/monitoring",
-    icon: Droplets,
-    color: "green",
-  },
-  {
-    title: "Gas Production",
-    desc: "Record and review internally generated gas entries",
-    href: "/production",
-    icon: Flame,
-    color: "orange",
-  },
-];
-
-const recentActivity = [
-  { type: "Production", detail: "Oxygen — 500 L", tank: "Tank A", time: "Today, 09:15 AM", status: "Posted" },
-  { type: "Level Entry", detail: "Nitrogen — Closing: 420 L", tank: "Tank B", time: "Today, 08:40 AM", status: "Saved" },
-  { type: "Tank Added", detail: "LPG Storage Unit 3", tank: "Tank C", time: "Yesterday, 04:00 PM", status: "Active" },
-  { type: "Production", detail: "LPG — 1,200 Kg", tank: "Tank C", time: "Yesterday, 02:30 PM", status: "Posted" },
-  { type: "Alert", detail: "Tank D below minimum level", tank: "Tank D", time: "Yesterday, 11:00 AM", status: "Warning" },
+  { title: "Tank Master", desc: "Manage bulk storage tanks and their specifications", href: "/tanks", icon: Container, color: "blue" },
+  { title: "Tank Monitoring", desc: "Track real-time inventory levels in storage tanks", href: "/monitoring", icon: Droplets, color: "green" },
+  { title: "Gas Production", desc: "Record and review internally generated gas entries", href: "/production", icon: Flame, color: "orange" },
 ];
 
 const statusStyle = {
@@ -92,10 +34,90 @@ const statusStyle = {
 };
 
 export function Dashboard() {
+  const [stats, setStats] = useState(null);
+  const [activity, setActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchApi("/dashboard");
+        setStats(data.stats);
+        setActivity(data.recent_activity || []);
+      } catch (e) {
+        console.error(e);
+        setError("Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48 gap-3 text-slate-500">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span className="text-sm">Loading dashboard...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-48 text-red-500 text-sm gap-2">
+        <AlertTriangle className="w-4 h-4" />
+        {error}
+      </div>
+    );
+  }
+
+  const statCards = [
+    {
+      label: "Total Tanks",
+      value: stats?.total_tanks ?? "—",
+      icon: Container,
+      color: "blue",
+      change: stats ? `${stats.inactive_tanks} inactive, ${stats.maintenance_tanks} in maintenance` : "—",
+      trend: "neutral",
+    },
+    {
+      label: "Active Tanks",
+      value: stats?.active_tanks ?? "—",
+      icon: CheckCircle2,
+      color: "green",
+      change: stats ? `of ${stats.total_tanks} total tanks` : "—",
+      trend: "up",
+    },
+    {
+      label: "Today's Production",
+      value: stats
+        ? stats.today_production_total > 0
+          ? `${stats.today_production_total.toLocaleString()} ${stats.today_production_unit}`
+          : "No entries today"
+        : "—",
+      icon: Flame,
+      color: "orange",
+      change: stats ? `${stats.today_production_entries} entr${stats.today_production_entries === 1 ? "y" : "ies"} today` : "—",
+      trend: "up",
+    },
+    {
+      label: "Low Level Alerts",
+      value: stats?.low_level_alerts ?? "—",
+      icon: AlertTriangle,
+      color: "red",
+      change: stats?.low_level_alerts > 0 ? "Requires attention" : "All tanks OK",
+      trend: stats?.low_level_alerts > 0 ? "warning" : "neutral",
+    },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const c = colorMap[stat.color];
           const Icon = stat.icon;
           return (
@@ -120,6 +142,7 @@ export function Dashboard() {
         })}
       </div>
 
+      {/* Quick Access */}
       <div>
         <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">
           Quick Access
@@ -150,7 +173,7 @@ export function Dashboard() {
         </div>
       </div>
 
-
+      {/* Recent Activity */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-2">
@@ -159,32 +182,36 @@ export function Dashboard() {
           </h2>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Detail</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tank</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Time</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {recentActivity.map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3.5 font-medium text-slate-700">{row.type}</td>
-                  <td className="px-5 py-3.5 text-slate-600">{row.detail}</td>
-                  <td className="px-5 py-3.5 text-slate-600">{row.tank}</td>
-                  <td className="px-5 py-3.5 text-slate-400 text-xs">{row.time}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyle[row.status]}`}>
-                      {row.status}
-                    </span>
-                  </td>
+          {activity.length === 0 ? (
+            <div className="text-center py-10 text-slate-400 text-sm">No recent activity found.</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Detail</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tank</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Time</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {activity.map((row, i) => (
+                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-3.5 font-medium text-slate-700">{row.type}</td>
+                    <td className="px-5 py-3.5 text-slate-600">{row.detail}</td>
+                    <td className="px-5 py-3.5 text-slate-600">{row.tank || "—"}</td>
+                    <td className="px-5 py-3.5 text-slate-400 text-xs">{row.time}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyle[row.status] || "bg-slate-100 text-slate-600"}`}>
+                        {row.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

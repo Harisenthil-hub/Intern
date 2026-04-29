@@ -20,7 +20,7 @@ function Row({ label, value }) {
 
 export function ViewProductionPage({ item, onBack, onEdit }) {
   if (!item) return null;
-  const isPosted = item._mode === "post";
+  const isPosted = item.is_posted === 1 || item.isPosted === 1;
 
   return (
     <div className="grid grid-cols-3 gap-5">
@@ -40,7 +40,7 @@ export function ViewProductionPage({ item, onBack, onEdit }) {
                 <Lock className="w-3 h-3" /> Posted
               </span>
             ) : (
-              <span className="bg-yellow-400 text-yellow-900 text-xs px-2.5 py-1 rounded-full font-semibold">Draft</span>
+              <span className="bg-yellow-400 text-yellow-900 text-xs px-2.5 py-1 rounded-full font-semibold">Saved</span>
             )}
             <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-mono">{item.productionId}</span>
           </div>
@@ -98,7 +98,7 @@ export function ViewProductionPage({ item, onBack, onEdit }) {
             <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
               <Pencil className="w-5 h-5 text-yellow-600 shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-yellow-800">Draft</p>
+                <p className="text-sm font-semibold text-yellow-800">Saved</p>
                 <p className="text-xs text-yellow-700 mt-0.5">This record can still be edited or posted</p>
               </div>
             </div>
