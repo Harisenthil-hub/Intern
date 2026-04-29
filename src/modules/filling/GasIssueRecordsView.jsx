@@ -26,7 +26,7 @@ const statusBadgeClass = (status) =>
 
 export function GasIssueRecordsView() {
   const navigate = useNavigate();
-  const { records } = useGasIssueStore();
+  const { records, isLoading } = useGasIssueStore();
   const [selectedRecord, setSelectedRecord] = useState(null);
 
   return (
@@ -43,7 +43,11 @@ export function GasIssueRecordsView() {
       </header>
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {records.length === 0 ? (
+        {isLoading && records.length === 0 ? (
+          <div className="px-6 py-16 text-center text-sm text-slate-500">
+            Loading issue records...
+          </div>
+        ) : records.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-slate-500">
             No issue records yet
           </div>

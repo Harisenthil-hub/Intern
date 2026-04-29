@@ -1,44 +1,141 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { fetchApi } from "@/lib/api";
 
 const LossLeakageStoreContext = createContext(null);
 
-const formatRecordId = (number) => `LS-${String(number).padStart(3, "0")}`;
+// Convert snake_case from API to camelCase for frontend
+const apiToCamelCase = (apiRecord) => {
+  return {
+    id: apiRecord.record_code,
+    recordCode: apiRecord.record_code,
+    tankId: apiRecord.tank_id,
+    date: apiRecord.date,
+    expectedQuantity: apiRecord.expected_quantity,
+    actualQuantity: apiRecord.actual_quantity,
+    lossQuantity: apiRecord.loss_quantity,
+    reason: apiRecord.reason || "",
+    status: apiRecord.status,
+    createdAt: apiRecord.created_at,
+    updatedAt: apiRecord.updated_at,
+  };
+};
 
-const getNextRecordId = (records) => {
-  const maxIndex = records.reduce((max, record) => {
-    const match = /^LS-(\d+)$/.exec(record.id);
-    if (!match) return max;
-    const parsed = Number(match[1]);
-    if (!Number.isFinite(parsed)) return max;
-    return Math.max(max, parsed);
-  }, 0);
-
-  return formatRecordId(maxIndex + 1);
+// Convert camelCase from frontend to snake_case for API
+const camelCaseToApi = (frontendRecord) => {
+  return {
+    tank_id: frontendRecord.tankId,
+    date: frontendRecord.date,
+    expected_quantity: frontendRecord.expectedQuantity,
+    actual_quantity: frontendRecord.actualQuantity,
+    reason: frontendRecord.reason || "",
+    status: frontendRecord.status || "draft",
+  };
 };
 
 export function LossLeakageStoreProvider({ children }) {
   const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const createRecord = (payload) => {
-    setRecords((prev) => {
-      const nextId = getNextRecordId(prev);
-      return [...prev, { ...payload, id: nextId, status: payload.status ?? "draft" }];
-    });
+  // Fetch records on mount
+  useEffect(() => {
+    const fetchRecords = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetchApi("/loss-records/");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch records: ${response.statusText}`);
+        }
+        const json = await response.json();
+        const data = json.data || [];
+        setRecords(Array.isArray(data) ? data.map(apiToCamelCase) : []);
+      } catch (err) {
+        console.error("Error fetching records:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecords();
+  }, []);
+
+  const createRecord = async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const apiPayload = camelCaseToApi(payload);
+      const response = await fetchApi("/loss-records/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiPayload),
+      });
+
+      if (!response.ok) {
+        const json = await response.json();
+        throw new Error(json.message || `Failed to create record: ${response.statusText}`);
+      }
+
+      const json = await response.json();
+      const newRecord = apiToCamelCase(json.data);
+      setRecords((prev) => [...prev, newRecord]);
+      return newRecord;
+    } catch (err) {
+      console.error("Error creating record:", err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateRecord = (id, payload) => {
-    setRecords((prev) =>
-      prev.map((record) => (record.id === id ? { ...record, ...payload } : record)),
-    );
+  const updateRecord = async (recordCode, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const apiPayload = camelCaseToApi(payload);
+      const response = await fetchApi(`/loss-records/${recordCode}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiPayload),
+      });
+
+      if (!response.ok) {
+        const json = await response.json();
+        throw new Error(json.message || `Failed to update record: ${response.statusText}`);
+      }
+
+      const json = await response.json();
+      const updatedRecord = apiToCamelCase(json.data);
+      setRecords((prev) =>
+        prev.map((record) => (record.recordCode === recordCode ? updatedRecord : record)),
+      );
+      return updatedRecord;
+    } catch (err) {
+      console.error("Error updating record:", err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRecordByCode = (recordCode) => {
+    return records.find((record) => record.recordCode === recordCode) ?? null;
   };
 
   const value = useMemo(
     () => ({
       records,
+      loading,
+      error,
       createRecord,
       updateRecord,
+      getRecordByCode,
+      clearError: () => setError(null),
     }),
-    [records],
+    [records, loading, error],
   );
 
   return (
