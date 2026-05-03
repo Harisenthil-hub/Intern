@@ -43,7 +43,7 @@ export function LossLeakageStoreProvider({ children }) {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetchApi("/loss-records/");
+        const response = await fetchApi("/loss-records/", { raw: true });
         if (!response.ok) {
           throw new Error(`Failed to fetch records: ${response.statusText}`);
         }
@@ -67,6 +67,7 @@ export function LossLeakageStoreProvider({ children }) {
     try {
       const apiPayload = camelCaseToApi(payload);
       const response = await fetchApi("/loss-records/", {
+        raw: true,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(apiPayload),
@@ -96,6 +97,7 @@ export function LossLeakageStoreProvider({ children }) {
     try {
       const apiPayload = camelCaseToApi(payload);
       const response = await fetchApi(`/loss-records/${recordCode}`, {
+        raw: true,
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(apiPayload),

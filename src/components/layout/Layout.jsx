@@ -1,9 +1,13 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, NavLink } from "react-router-dom";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "../ui/sidebar";
+import { TooltipProvider } from "../ui/tooltip";
+import { AppSidebar } from "./AppSideBar";
+import { ChevronRight } from "lucide-react";
 
-const Layout = () => {
+export const SimpleLayout = () => {
   return (
     <div className="flex h-screen w-full bg-gray-50/50">
       <Sidebar />
@@ -11,11 +15,13 @@ const Layout = () => {
         <Navbar />
         <main className="flex-1 overflow-auto p-6 md:p-8">
           <div className="mx-auto max-w-6xl">
-import { Outlet, useLocation, NavLink } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "../ui/sidebar";
-import { TooltipProvider } from "../ui/tooltip";
-import { AppSidebar } from "./AppSideBar";
-import { ChevronRight } from "lucide-react";
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
 
 const PAGE_TITLES = {
   "/": "Dashboard Overview",
@@ -29,6 +35,7 @@ const PAGE_TITLES = {
   "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring",
   "/issue-to-filling/new": "Gas Issue Entry",
 };
+
 const PAGES = {
   "/": { title: "Dashboard", desc: "System overview & quick stats" },
   "/tanks": {
@@ -118,6 +125,7 @@ export function Layout() {
   const isLossLeakageEditRoute = /^\/loss-leakage-monitoring\/[^/]+\/edit$/.test(
     location.pathname,
   );
+  
   const pageTitle =
     isProcurementEditRoute
       ? "Gas Procurement Entry"
@@ -126,6 +134,7 @@ export function Layout() {
         : isLossLeakageEditRoute
           ? "Loss / Leakage Monitoring"
           : PAGE_TITLES[location.pathname] || "Dashboard";
+          
   const page = isProcurementEditRoute
     ? PAGES["/procurement/new"]
     : isIssueEditRoute
@@ -133,6 +142,7 @@ export function Layout() {
       : isLossLeakageEditRoute
         ? PAGES["/loss-leakage-monitoring/new"]
         : PAGES[location.pathname] || PAGES["/"];
+        
   const crumbs = isProcurementEditRoute
     ? [...BREADCRUMBS["/procurement"], { label: "Edit Entry" }]
     : isIssueEditRoute
@@ -140,62 +150,6 @@ export function Layout() {
       : isLossLeakageEditRoute
         ? [...BREADCRUMBS["/loss-leakage-monitoring"], { label: "Edit Entry" }]
         : BREADCRUMBS[location.pathname] || BREADCRUMBS["/"];
-
-const PAGE_TITLES = {
-  "/": "Dashboard Overview",
-  "/tanks": "Tank Master",
-  "/monitoring": "Tank Level Monitoring",
-  "/production": "Gas Production Entry",
-  "/procurement": "Gas Procurement Records",
-  "/procurement/new": "Gas Procurement Entry",
-  "/issue-to-filling": "Gas Issue to Filling",
-  "/loss-leakage-monitoring": "Loss / Leakage Records",
-  "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring",
-const PAGES = {
-  "/": { title: "Dashboard", desc: "System overview & quick stats" },
-  "/tanks": {
-    title: "Bulk Storage Tank Master",
-    desc: "Define and manage gas storage tanks",
-  },
-  "/monitoring": {
-    title: "Tank Level Monitoring",
-    desc: "Track and update current tank levels",
-  },
-  "/production": {
-    title: "Gas Production Entry",
-    desc: "Record internally generated gas production",
-  },
-};
-
-const BREADCRUMBS = {
-  "/": [{ label: "Dashboard", href: "/" }],
-  "/tanks": [{ label: "Inventory" }, { label: "Tank Master", href: "/tanks" }],
-  "/monitoring": [
-    { label: "Inventory" },
-    { label: "Tank Monitoring", href: "/monitoring" },
-  ],
-  "/production": [
-    { label: "Inventory" },
-    { label: "Gas Production", href: "/production" },
-  ],
-};
-
-export function Layout() {
-  const location = useLocation();
-  const isProcurementEditRoute = /^\/procurement\/[^/]+\/edit$/.test(
-    location.pathname,
-  );
-  const isLossLeakageEditRoute = /^\/loss-leakage-monitoring\/[^/]+\/edit$/.test(
-    location.pathname,
-  );
-  const pageTitle =
-    isProcurementEditRoute
-      ? "Gas Procurement Entry"
-      : isLossLeakageEditRoute
-        ? "Loss / Leakage Monitoring"
-        : PAGE_TITLES[location.pathname] || "Dashboard";
-  const page = PAGES[location.pathname] || PAGES["/"];
-  const crumbs = BREADCRUMBS[location.pathname] || BREADCRUMBS["/"];
 
   return (
     <TooltipProvider>
@@ -229,35 +183,23 @@ export function Layout() {
                 ))}
               </nav>
             </div>
-
-            {/* Right side: user info 
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-slate-800">Admin User</p>
-                <p className="text-xs text-slate-500">Plant Manager</p>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shadow">
-                A
-              </div>
-            </div>
-            */}
           </header>
 
           {/* Page sub-header */}
           <div className="bg-white border-b px-6 py-3">
             <h1 className="text-base font-semibold text-slate-800">
-              {page.title}
+              {pageTitle}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">{page.desc}</p>
           </div>
 
           <main className="flex-1 p-6 overflow-auto page-fade-in">
             <Outlet />
-          </div>
-        </main>
-      </div>
-    </div>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
-};
+}
 
 export default Layout;

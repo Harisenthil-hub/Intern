@@ -1,18 +1,4 @@
-import React from 'react';
-import DashboardCards from '../modules/cylinder/components/DashboardCards';
-import PageHeader from '../components/common/PageHeader';
-
-const Dashboard = () => {
-  return (
-    <div>
-      <PageHeader title="Cylinder Stock Dashboard" description="Overview of cylinder inventory and statuses." />
-      <DashboardCards />
-    </div>
-  );
-};
-
-export default Dashboard;
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Container,
@@ -26,6 +12,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
+import DashboardCards from '../modules/cylinder/components/DashboardCards';
+import PageHeader from '../components/common/PageHeader';
 
 const colorMap = {
   blue: { bg: "bg-blue-50", icon: "bg-blue-600", text: "text-blue-600", border: "border-blue-100" },
@@ -45,6 +33,15 @@ const statusStyle = {
   Saved: "bg-blue-100 text-blue-700",
   Active: "bg-emerald-100 text-emerald-700",
   Warning: "bg-red-100 text-red-700",
+};
+
+const CylinderDashboard = () => {
+  return (
+    <div className="mt-8">
+      <PageHeader title="Cylinder Stock Dashboard" description="Overview of cylinder inventory and statuses." />
+      <DashboardCards />
+    </div>
+  );
 };
 
 export function Dashboard() {
@@ -228,6 +225,9 @@ export function Dashboard() {
           )}
         </div>
       </div>
+      <CylinderDashboard />
     </div>
   );
 }
+
+export default Dashboard;

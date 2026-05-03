@@ -11,7 +11,7 @@ export function GasIssueStoreProvider({ children }) {
   const loadRecords = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetchApi("/issues/");
+      const response = await fetchApi("/issues/", { raw: true });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result?.success || !Array.isArray(result.data)) {
         throw new Error(result?.message || "Failed to load issue records");
@@ -41,6 +41,7 @@ export function GasIssueStoreProvider({ children }) {
     };
 
     const response = await fetchApi("/issues/", {
+      raw: true,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
@@ -65,6 +66,7 @@ export function GasIssueStoreProvider({ children }) {
     };
 
     const response = await fetchApi(`/issues/${id}`, {
+      raw: true,
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
