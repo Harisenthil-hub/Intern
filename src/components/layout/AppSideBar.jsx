@@ -10,6 +10,8 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Activity,
+  Beaker,
+  ArrowRightLeft,
 } from "lucide-react";
 
 import {
@@ -39,19 +41,19 @@ const navGroups = [
     ],
   },
   {
-    title: "Gas Procurement",
-    url: "/procurement",
-    icon: Truck,
+    label: "Operations",
+    items: [
+      { title: "Gas Procurement", url: "/procurement", icon: Truck },
+      { title: "Issue to Filling", url: "/issue-to-filling", icon: Repeat },
+      { title: "Loss / Leakage Monitoring", url: "/loss-leakage-monitoring", icon: ShieldAlert },
+    ],
   },
   {
-    title: "Issue to Filling",
-    url: "/issue-to-filling",
-    icon: Repeat,
-  },
-  {
-    title: "Loss / Leakage Monitoring",
-    url: "/loss-leakage-monitoring",
-    icon: ShieldAlert,
+    label: "Cylinder Operations",
+    items: [
+      { title: "Cylinder Filling", url: "/filling", icon: Beaker },
+      { title: "Cylinder Movement", url: "/movement", icon: ArrowRightLeft },
+    ],
   },
 ];
 
@@ -59,16 +61,6 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const isCollapsed = state === "collapsed";
-  const normalizedNavGroups = navGroups.map((group) => {
-    if (Array.isArray(group.items)) {
-      return group;
-    }
-
-    return {
-      label: group.label ?? null,
-      items: [{ title: group.title, url: group.url, icon: group.icon }],
-    };
-  });
 
   return (
     <Sidebar
@@ -100,7 +92,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-3 gap-1">
-        {normalizedNavGroups.map((group, index) => (
+        {navGroups.map((group, index) => (
           <SidebarGroup
             key={group.label ?? group.items[0]?.title ?? `group-${index}`}
             className="p-0 mb-1"

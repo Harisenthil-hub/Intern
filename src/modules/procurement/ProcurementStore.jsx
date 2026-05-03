@@ -11,7 +11,7 @@ export function ProcurementStoreProvider({ children }) {
   const loadRecords = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetchApi("/procurements/");
+      const response = await fetchApi("/procurements/", { raw: true });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result?.success || !Array.isArray(result.data)) {
         throw new Error(result?.message || "Failed to load procurement records");
@@ -42,6 +42,7 @@ export function ProcurementStoreProvider({ children }) {
     };
 
     const response = await fetchApi("/procurements/", {
+      raw: true,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
@@ -67,6 +68,7 @@ export function ProcurementStoreProvider({ children }) {
     };
 
     const response = await fetchApi(`/procurements/${id}`, {
+      raw: true,
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
