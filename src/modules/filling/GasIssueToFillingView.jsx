@@ -102,9 +102,7 @@ export function GasIssueToFillingView({
   useEffect(() => {
     const loadTanks = async () => {
       try {
-        const response = await fetchApi("/tanks/active");
-        if (!response.ok) return;
-        const data = await response.json();
+        const data = await fetchApi("/tanks/active");
         if (!Array.isArray(data)) return;
         setTanks(
           data.map((tank) => ({

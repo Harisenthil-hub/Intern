@@ -101,14 +101,12 @@ export function LossLeakageMonitoringView({
   useEffect(() => {
     const loadTanks = async () => {
       try {
-        const response = await fetchApi("/tanks/active");
-        if (!response.ok) {
-          setTanks([]);
-          return;
-        }
-
-        const result = await response.json().catch(() => ([]));
-        const data = Array.isArray(result) ? result : Array.isArray(result.data) ? result.data : [];
+        const result = await fetchApi("/tanks/active");
+        const data = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.data)
+            ? result.data
+            : [];
 
         setTanks(
           data.map((tank) => ({
