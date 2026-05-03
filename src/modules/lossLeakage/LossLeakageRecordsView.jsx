@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Lock, Pencil, Plus } from "lucide-react";
+import { Eye, Lock, Pencil, Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -25,7 +26,7 @@ const statusBadgeClass = (status) =>
 
 export function LossLeakageRecordsView() {
   const navigate = useNavigate();
-  const { records } = useLossLeakageStore();
+  const { records, loading, error } = useLossLeakageStore();
   const [selectedRecord, setSelectedRecord] = useState(null);
 
   return (
@@ -35,14 +36,31 @@ export function LossLeakageRecordsView() {
           type="button"
           className="h-9 bg-blue-700 px-4 hover:bg-blue-800"
           onClick={() => navigate("/loss-leakage-monitoring/new")}
+          disabled={loading}
         >
           <Plus className="size-4" />
           Add Record
         </Button>
       </header>
 
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 size-5 text-red-600 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-red-900">Error loading records</p>
+              <p className="mt-1 text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {records.length === 0 ? (
+        {loading ? (
+          <div className="px-6 py-16 text-center text-sm text-slate-500">
+            Loading records...
+          </div>
+        ) : records.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-slate-500">
             No records available
           </div>
@@ -63,9 +81,9 @@ export function LossLeakageRecordsView() {
             </TableHeader>
             <TableBody>
               {records.map((record) => (
-                <TableRow key={record.id} className="transition-colors hover:bg-slate-50">
+                <TableRow key={record.recordCode} className="transition-colors hover:bg-slate-50">
                   <TableCell className="px-4 py-3 font-medium text-slate-800">
-                    {record.id}
+                    {record.recordCode}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-slate-700">{record.tankId}</TableCell>
                   <TableCell className="px-4 py-3 text-slate-700">{record.date}</TableCell>
@@ -105,7 +123,9 @@ export function LossLeakageRecordsView() {
                           variant="outline"
                           size="sm"
                           className="text-slate-700"
-                          onClick={() => navigate(`/loss-leakage-monitoring/${record.id}/edit`)}
+                          onClick={() =>
+                            navigate(`/loss-leakage-monitoring/${record.recordCode}/edit`)
+                          }
                         >
                           <Pencil className="size-3.5" />
                           Edit
@@ -134,6 +154,9 @@ export function LossLeakageRecordsView() {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Loss / Leakage Record Details</DialogTitle>
+            <DialogDescription>
+              Review the selected loss or leakage record before closing the dialog.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedRecord ? (
@@ -142,7 +165,7 @@ export function LossLeakageRecordsView() {
                 <div className="grid gap-2 sm:grid-cols-2">
                   <p>
                     <span className="font-medium text-slate-900">Record ID:</span>{" "}
-                    {selectedRecord.id}
+                    {selectedRecord.recordCode}
                   </p>
                   <p>
                     <span className="font-medium text-slate-900">Tank ID:</span>{" "}

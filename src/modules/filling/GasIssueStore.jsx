@@ -1,44 +1,95 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { fetchApi } from "@/lib/api";
 
 const GasIssueStoreContext = createContext(null);
 
-const formatIssueId = (number) => `IS-${String(number).padStart(3, "0")}`;
-
-const getNextIssueId = (records) => {
-  const maxIndex = records.reduce((max, record) => {
-    const match = /^IS-(\d+)$/.exec(record.id);
-    if (!match) return max;
-    const parsed = Number(match[1]);
-    if (!Number.isFinite(parsed)) return max;
-    return Math.max(max, parsed);
-  }, 0);
-
-  return formatIssueId(maxIndex + 1);
-};
-
 export function GasIssueStoreProvider({ children }) {
   const [records, setRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
-  const createRecord = (payload) => {
-    setRecords((prev) => {
-      const nextId = getNextIssueId(prev);
-      return [...prev, { ...payload, id: nextId, status: payload.status ?? "draft" }];
+  const loadRecords = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchApi("/issues/");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result?.success || !Array.isArray(result.data)) {
+        throw new Error(result?.message || "Failed to load issue records");
+      }
+      setRecords(result.data);
+      return result.data;
+    } finally {
+      setIsLoading(false);
+      setHasLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRecords().catch(() => {
+      setRecords([]);
     });
-  };
+  }, [loadRecords]);
 
-  const updateRecord = (id, payload) => {
+  const createRecord = useCallback(async (payload) => {
+    const requestBody = {
+      tankId: payload.tankId,
+      gasType: payload.gasType,
+      date: payload.date,
+      quantity: Number(payload.quantity),
+      batchId: payload.batchId,
+      status: payload.status ?? "draft",
+    };
+
+    const response = await fetchApi("/issues/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.success || !result.data) {
+      throw new Error(result?.message || "Failed to create issue record");
+    }
+    setRecords((prev) => [result.data, ...prev]);
+    loadRecords().catch(() => {});
+    return result.data;
+  }, [loadRecords]);
+
+  const updateRecord = useCallback(async (id, payload) => {
+    const requestBody = {
+      tankId: payload.tankId,
+      gasType: payload.gasType,
+      date: payload.date,
+      quantity: Number(payload.quantity),
+      batchId: payload.batchId,
+      status: payload.status ?? "draft",
+    };
+
+    const response = await fetchApi(`/issues/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.success || !result.data) {
+      throw new Error(result?.message || "Failed to update issue record");
+    }
     setRecords((prev) =>
-      prev.map((record) => (record.id === id ? { ...record, ...payload } : record)),
+      prev.map((record) => (record.id === id ? result.data : record)),
     );
-  };
+    loadRecords().catch(() => {});
+    return result.data;
+  }, [loadRecords]);
 
   const value = useMemo(
     () => ({
       records,
+      isLoading,
+      hasLoaded,
+      loadRecords,
       createRecord,
       updateRecord,
     }),
-    [records],
+    [records, isLoading, hasLoaded, loadRecords, createRecord, updateRecord],
   );
 
   return (

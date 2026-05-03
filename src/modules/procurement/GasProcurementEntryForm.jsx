@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { fetchApi } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -16,14 +17,6 @@ const VENDOR_OPTIONS = [
   "Apex Bulk Gas Logistics",
   "BlueLine Energy",
 ];
-
-const TANKS = [
-  { id: "TNK-001", gasType: "Oxygen", capacity: 1000, currentLevel: 700 },
-  { id: "TNK-002", gasType: "Nitrogen", capacity: 1000, currentLevel: 200 },
-  { id: "TNK-003", gasType: "LPG", capacity: 1000, currentLevel: 200 },
-];
-
-const GAS_TYPES = ["Oxygen", "Nitrogen", "LPG"];
 const MAX_QUANTITY_INPUT = 1000000;
 
 const initialFormState = (today) => ({
@@ -111,6 +104,28 @@ export function GasProcurementEntryForm({
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [fieldTouched, setFieldTouched] = useState({});
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+  const [tanks, setTanks] = useState([]);
+
+  useEffect(() => {
+    const loadTanks = async () => {
+      try {
+        const response = await fetchApi("/tanks/active");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!Array.isArray(data)) return;
+        const mapped = data.map((tank) => ({
+          id: tank.tank_id,
+          gasType: tank.gas_type,
+          capacity: Number(tank.capacity_value) || 0,
+          currentLevel: Number(tank.current_level) || 0,
+        }));
+        setTanks(mapped);
+      } catch {
+        setTanks([]);
+      }
+    };
+    loadTanks();
+  }, []);
 
   useEffect(() => {
     setForm(formStateFromRecord(initialData, today));
@@ -130,13 +145,18 @@ export function GasProcurementEntryForm({
   }, [vendorQuery]);
 
   const filteredTanks = useMemo(
-    () => TANKS.filter((tank) => tank.gasType === form.gasType),
-    [form.gasType],
+    () => tanks.filter((tank) => tank.gasType === form.gasType),
+    [form.gasType, tanks],
   );
 
   const selectedTank = useMemo(
-    () => TANKS.find((tank) => tank.id === form.tankId) ?? null,
-    [form.tankId],
+    () => tanks.find((tank) => tank.id === form.tankId) ?? null,
+    [form.tankId, tanks],
+  );
+
+  const gasTypes = useMemo(
+    () => Array.from(new Set(tanks.map((tank) => tank.gasType))).sort(),
+    [tanks],
   );
 
   const availableSpace = selectedTank
@@ -412,7 +432,7 @@ export function GasProcurementEntryForm({
                     className={getInputClassName(Boolean(getFieldError("gasType")))}
                   >
                     <option value="">Select gas type</option>
-                    {GAS_TYPES.map((gas) => (
+                    {gasTypes.map((gas) => (
                       <option key={gas} value={gas}>
                         {gas}
                       </option>

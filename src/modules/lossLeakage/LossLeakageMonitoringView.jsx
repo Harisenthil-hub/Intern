@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchApi } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const TANK_OPTIONS = [
-  { id: "TNK-001", capacity: 1000, currentLevel: 600 },
-  { id: "TNK-002", capacity: 1000, currentLevel: 400 },
-];
 
 const REASONS = ["Leakage", "Measurement Error", "Evaporation"];
 
@@ -86,17 +82,48 @@ export function LossLeakageMonitoringView({
   initialData = null,
   onSubmit,
   onCancel,
+  isSubmitting = false,
+  submitError = null,
+  onDismissError = null,
 }) {
   const [form, setForm] = useState(getInitialFormState(initialData));
   const [errors, setErrors] = useState({});
   const [feedbackMessage, setFeedbackMessage] = useState(INITIAL_FEEDBACK);
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+  const [tanks, setTanks] = useState([]);
   const isEditMode = mode === "edit";
 
   const selectedTank = useMemo(
-    () => TANK_OPTIONS.find((tank) => tank.id === form.tankId) ?? null,
-    [form.tankId],
+    () => tanks.find((tank) => tank.id === form.tankId) ?? null,
+    [form.tankId, tanks],
   );
+
+  useEffect(() => {
+    const loadTanks = async () => {
+      try {
+        const response = await fetchApi("/tanks/active");
+        if (!response.ok) {
+          setTanks([]);
+          return;
+        }
+
+        const result = await response.json().catch(() => ([]));
+        const data = Array.isArray(result) ? result : Array.isArray(result.data) ? result.data : [];
+
+        setTanks(
+          data.map((tank) => ({
+            id: tank.tank_id,
+            capacity: Number(tank.capacity_value) || 0,
+            currentLevel: Number(tank.current_level) || 0,
+          })),
+        );
+      } catch {
+        setTanks([]);
+      }
+    };
+
+    loadTanks();
+  }, []);
 
   useEffect(() => {
     const nextForm = getInitialFormState(initialData);
@@ -112,6 +139,7 @@ export function LossLeakageMonitoringView({
   const canEnterActual = expectedValue !== null && expectedValue > 0;
   const canSelectReason = hasLossCalculation && lossValue > 0;
   const showNoReasonHint = hasLossCalculation && lossValue === 0;
+  const hasAvailableTanks = tanks.length > 0;
 
   const validateForm = (nextForm) => {
     const nextErrors = {};
@@ -276,6 +304,7 @@ export function LossLeakageMonitoringView({
   };
 
   const isFormValid =
+    hasAvailableTanks &&
     Boolean(form.tankId) &&
     form.expectedQuantity !== "" &&
     form.actualQuantity !== "" &&
@@ -283,11 +312,11 @@ export function LossLeakageMonitoringView({
 
   const lossDisplayValue = form.lossQuantity === "" ? "--" : form.lossQuantity;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isFormValid) return;
     resetAfterSubmit();
     if (onSubmit) {
-      onSubmit({
+      await onSubmit({
         tankId: form.tankId,
         date: form.date,
         expectedQuantity: form.expectedQuantity,
@@ -300,12 +329,12 @@ export function LossLeakageMonitoringView({
     }
   };
 
-  const runPost = () => {
+  const runPost = async () => {
     if (!isFormValid) return;
     setPostConfirmOpen(false);
     resetAfterSubmit();
     if (onSubmit) {
-      onSubmit({
+      await onSubmit({
         tankId: form.tankId,
         date: form.date,
         expectedQuantity: form.expectedQuantity,
@@ -325,6 +354,25 @@ export function LossLeakageMonitoringView({
 
   return (
     <section className="mx-auto w-full max-w-7xl">
+      {submitError && (
+        <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-medium text-red-900">Error</p>
+              <p className="mt-1 text-sm text-red-800">{submitError}</p>
+            </div>
+            {onDismissError && (
+              <button
+                type="button"
+                onClick={onDismissError}
+                className="text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-6 xl:flex-row">
         <article className="flex-1 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <form className="space-y-7" onSubmit={(event) => event.preventDefault()}>
@@ -338,18 +386,22 @@ export function LossLeakageMonitoringView({
                 <Select
                   value={form.tankId}
                   onValueChange={(value) => updateField("tankId", value)}
+                  disabled={isSubmitting || !hasAvailableTanks}
                 >
                   <SelectTrigger id="loss-tank-id" className="w-full">
-                    <SelectValue placeholder="Select tank ID" />
+                    <SelectValue placeholder={hasAvailableTanks ? "Select tank ID" : "No active tanks"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {TANK_OPTIONS.map((tank) => (
+                    {tanks.map((tank) => (
                       <SelectItem key={tank.id} value={tank.id}>
                         {tank.id}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {!hasAvailableTanks && (
+                  <p className="text-sm text-rose-600">No active tanks are available right now.</p>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -361,6 +413,7 @@ export function LossLeakageMonitoringView({
                   type="date"
                   value={form.date}
                   onChange={(event) => updateField("date", event.target.value)}
+                  disabled={isSubmitting}
                 />
               </div>
             </section>
@@ -379,6 +432,7 @@ export function LossLeakageMonitoringView({
                   value={form.expectedQuantity}
                   onChange={(event) => handleExpectedChange(event.target.value)}
                   placeholder="Enter expected quantity"
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -393,7 +447,7 @@ export function LossLeakageMonitoringView({
                   value={form.actualQuantity}
                   onChange={(event) => handleActualChange(event.target.value)}
                   placeholder="Enter actual quantity"
-                  disabled={!canEnterActual}
+                  disabled={!canEnterActual || isSubmitting}
                   className={!canEnterActual ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""}
                 />
               </div>
@@ -424,7 +478,7 @@ export function LossLeakageMonitoringView({
                 <Select
                   value={form.reason}
                   onValueChange={handleReasonChange}
-                  disabled={!canSelectReason}
+                  disabled={!canSelectReason || isSubmitting}
                 >
                   <SelectTrigger id="loss-reason" className="w-full">
                     <SelectValue placeholder="Select reason" />
@@ -449,24 +503,25 @@ export function LossLeakageMonitoringView({
                 variant="outline"
                 className="h-9 px-4 text-slate-700"
                 onClick={handleCancel}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="button"
-                className="h-9 bg-blue-700 px-4 hover:bg-blue-800"
+                className="h-9 bg-blue-700 px-4 hover:bg-blue-800 disabled:bg-blue-400"
                 onClick={handleSave}
-                disabled={!isFormValid}
+                disabled={!isFormValid || isSubmitting}
               >
-                {isEditMode ? "Update" : "Save"}
+                {isSubmitting ? "Saving..." : isEditMode ? "Update" : "Save"}
               </Button>
               <Button
                 type="button"
-                className="h-9 bg-emerald-600 px-4 hover:bg-emerald-700"
+                className="h-9 bg-emerald-600 px-4 hover:bg-emerald-700 disabled:bg-emerald-400"
                 onClick={handlePostRequest}
-                disabled={!isFormValid}
+                disabled={!isFormValid || isSubmitting}
               >
-                Post
+                {isSubmitting ? "Posting..." : "Post"}
               </Button>
             </div>
           </form>

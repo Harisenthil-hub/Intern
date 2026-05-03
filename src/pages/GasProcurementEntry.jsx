@@ -6,7 +6,7 @@ import { useProcurementStore } from "@/modules/procurement/ProcurementStore";
 export function GasProcurementEntry() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { records, createRecord, updateRecord } = useProcurementStore();
+  const { records, isLoading, hasLoaded, createRecord, updateRecord } = useProcurementStore();
 
   const existingRecord = useMemo(
     () => records.find((record) => record.id === id) ?? null,
@@ -14,24 +14,41 @@ export function GasProcurementEntry() {
   );
 
   const isEditMode = Boolean(id);
+  const shouldRedirectMissingRecord =
+    isEditMode &&
+    hasLoaded &&
+    !isLoading &&
+    (!existingRecord || existingRecord.status === "posted");
 
-  const handleSubmit = (payload) => {
-    if (isEditMode && existingRecord) {
-      const nextStatus = payload.status === "posted" ? "posted" : "draft";
-      updateRecord(existingRecord.id, { ...payload, status: nextStatus });
-    } else {
-      createRecord(payload);
+  const handleSubmit = async (payload) => {
+    try {
+      if (isEditMode && existingRecord) {
+        const nextStatus = payload.status === "posted" ? "posted" : "draft";
+        await updateRecord(existingRecord.id, { ...payload, status: nextStatus });
+      } else {
+        await createRecord(payload);
+      }
+      navigate("/procurement");
+    } catch (error) {
+      window.alert(error?.message || "Unable to save procurement record.");
     }
-    navigate("/procurement");
   };
 
   useEffect(() => {
-    if (isEditMode && (!existingRecord || existingRecord.status === "posted")) {
+    if (shouldRedirectMissingRecord) {
       navigate("/procurement");
     }
-  }, [existingRecord, isEditMode, navigate]);
+  }, [navigate, shouldRedirectMissingRecord]);
 
-  if (isEditMode && (!existingRecord || existingRecord.status === "posted")) return null;
+  if (isEditMode && !hasLoaded) {
+    return (
+      <section className="mx-auto w-full max-w-6xl rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+        Loading procurement record...
+      </section>
+    );
+  }
+
+  if (shouldRedirectMissingRecord) return null;
 
   return (
     <GasProcurementEntryForm

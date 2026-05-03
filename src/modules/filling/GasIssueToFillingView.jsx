@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { fetchApi } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -19,12 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Droplets, Gauge, TrendingDown } from "lucide-react";
-
-const TANKS = [
-  { id: "TNK-001", gasType: "Oxygen", capacity: 1000, currentLevel: 620 },
-  { id: "TNK-002", gasType: "Nitrogen", capacity: 1000, currentLevel: 500 },
-  { id: "TNK-003", gasType: "LPG", capacity: 1000, currentLevel: 300 },
-];
 
 const FILLING_BATCH_OPTIONS = [
   "FB-2026-0418-01",
@@ -95,6 +90,7 @@ export function GasIssueToFillingView({
   const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+  const [tanks, setTanks] = useState([]);
 
   useEffect(() => {
     setForm(formStateFromRecord(initialData, today));
@@ -103,9 +99,32 @@ export function GasIssueToFillingView({
     setPostConfirmOpen(false);
   }, [initialData, today]);
 
+  useEffect(() => {
+    const loadTanks = async () => {
+      try {
+        const response = await fetchApi("/tanks/active");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!Array.isArray(data)) return;
+        setTanks(
+          data.map((tank) => ({
+            id: tank.tank_id,
+            gasType: tank.gas_type,
+            capacity: Number(tank.capacity_value) || 0,
+            currentLevel: Number(tank.current_level) || 0,
+          })),
+        );
+      } catch {
+        setTanks([]);
+      }
+    };
+
+    loadTanks();
+  }, []);
+
   const selectedTank = useMemo(
-    () => TANKS.find((tank) => tank.id === form.tankId) ?? null,
-    [form.tankId],
+    () => tanks.find((tank) => tank.id === form.tankId) ?? null,
+    [form.tankId, tanks],
   );
   const availableQuantity = selectedTank ? selectedTank.currentLevel : null;
   const errors = useMemo(() => validateForm(form, selectedTank), [form, selectedTank]);
@@ -262,7 +281,7 @@ export function GasIssueToFillingView({
                       <SelectValue placeholder="Select tank ID" />
                     </SelectTrigger>
                     <SelectContent>
-                      {TANKS.map((tank) => (
+                      {tanks.map((tank) => (
                         <SelectItem key={tank.id} value={tank.id}>
                           {tank.id}
                         </SelectItem>

@@ -1,12 +1,12 @@
-[2m11:19:26 am[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mError[22m: useLossLeakageStore must be used within LossLeakageStoreProvider
-[39m > useLossLeakageStore src/modules/lossLeakage/LossLeakageStore.jsx:54:10
-    52 |    const context = useContext(LossLeakageStoreContext);
-    53 |    if (!context) {
-    54 |      throw new Error("useLossLeakageStore must be used within LossLeakageStoreProvider");
-       |            ^
-    55 |    }
-    56 |    return context;
- > LossLeakageRecordsView src/modules/lossLeakage/LossLeakageRecordsView.jsx:20:22
+[2m3:50:01 pm[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mTypeError[22m: Cannot read properties of undefined (reading 'map')
+[39m > src/components/layout/AppSideBar.jsx:102:29
+    100 |              <SidebarGroupContent>
+    101 |                <SidebarMenu className="gap-0.5">
+    102 |                  {group.items.map((item) => {
+        |                               ^
+    103 |                    const isActive =
+    104 |                      location.pathname === item.url ||
+ > AppSidebar src/components/layout/AppSideBar.jsx:93:19
  > Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:25904:19
  > renderWithHooks node_modules/react-dom/cjs/react-dom-client.development.js:7662:21
  > updateFunctionComponent node_modules/react-dom/cjs/react-dom-client.development.js:10166:18
@@ -14,14 +14,15 @@
  > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
  > performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
  > workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:40
- > renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:10
 
-[2m11:19:26 am[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mAn error occurred in the <LossLeakageRecordsView> component.
+[2m3:50:01 pm[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mAn error occurred in the <AppSidebar> component.
 
 Consider adding an error boundary to your tree to customize error handling behavior.
 Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
 
-[2m11:50:45 am[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[2m11:50:45 am[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[2m11:50:58 am[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[2m11:50:58 am[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[2m3:55:30 pm[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mNo routes matched location "/dispatch" 
+[2m3:55:30 pm[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mNo routes matched location "/dispatch" 
+[2m3:57:07 pm[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mNo routes matched location "/dispatch" 
+[2m3:57:07 pm[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mNo routes matched location "/dispatch" 
+[2m3:59:01 pm[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[2m3:59:01 pm[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
