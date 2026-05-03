@@ -6,93 +6,85 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Lock } from "lucide-react";
 
-export function TankTable({ tanks }) {
-  if (tanks.length === 0) {
+const gasColors = {
+  Oxygen:   "bg-blue-100 text-blue-700",
+  Nitrogen: "bg-purple-100 text-purple-700",
+  LPG:      "bg-orange-100 text-orange-700",
+  CO2:      "bg-slate-200 text-slate-700",
+  Argon:    "bg-indigo-100 text-indigo-700",
+  Hydrogen: "bg-sky-100 text-sky-700",
+};
+
+const statusStyle = {
+  Active:      "bg-green-100 text-green-700",
+  Inactive:    "bg-red-100 text-red-700",
+  Maintenance: "bg-yellow-100 text-yellow-700",
+};
+
+export function TankTable({ tanks, onView }) {
+  if (!tanks || tanks.length === 0) {
     return (
-      <div className="text-center text-slate-500 border rounded-xl p-10 bg-white shadow-sm">
-        No tanks added yet
+      <div className="text-center text-slate-400 border border-dashed border-slate-200 rounded-xl p-12 bg-white">
+        <div className="text-3xl mb-2">🛢️</div>
+        <p className="font-medium text-slate-500">No tanks registered yet</p>
+        <p className="text-sm text-slate-400 mt-1">Click "+ Add Tank" to get started</p>
       </div>
     );
   }
 
-  const getGasTypeStyle = (type) => {
-    switch (type) {
-      case "Oxygen":
-        return "bg-blue-100 text-blue-700";
-      case "Nitrogen":
-        return "bg-purple-100 text-purple-700";
-      case "LPG":
-        return "bg-orange-100 text-orange-700";
-      default:
-        return "bg-slate-100 text-slate-700";
-    }
-  };
-
   return (
-    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-slate-50">
-            <TableHead className="font-semibold">Tank Name</TableHead>
-            <TableHead>Gas Type</TableHead>
-            <TableHead>Capacity</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+          <TableRow className="bg-slate-50 border-b border-slate-200">
+            {["Tank ID", "Tank Name", "Gas Type", "Capacity", "Location", "Min", "Max", "Status", "Entry", ""].map((h, i) => (
+              <TableHead key={i} className={`text-[11px] font-semibold uppercase tracking-wide text-slate-500 py-2.5 ${i === 9 ? "text-right" : ""}`}>
+                {h}
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
-
         <TableBody>
           {tanks.map((tank, index) => (
-            <TableRow key={index} className="hover:bg-slate-50 transition">
-              {/* Name */}
-              <TableCell className="font-medium text-slate-800">
-                {tank.name}
-              </TableCell>
-
-              {/* Gas Type */}
-              <TableCell>
-                <span
-                  className={`px-2 py-1 rounded-md text-xs font-medium ${getGasTypeStyle(
-                    tank.gasType
-                  )}`}
-                >
-                  {tank.gasType || "—"}
+            <TableRow key={index} className="hover:bg-blue-50/40 transition-colors border-b border-slate-50 last:border-0">
+              <TableCell className="font-mono text-xs text-slate-500 py-2.5">{tank.tank_id}</TableCell>
+              <TableCell className="font-semibold text-sm text-slate-800 py-2.5">{tank.name}</TableCell>
+              <TableCell className="py-2.5">
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${gasColors[tank.gas_type] || "bg-slate-100 text-slate-600"}`}>
+                  {tank.gas_type || "—"}
                 </span>
               </TableCell>
-
-              {/* Capacity */}
-              <TableCell>{tank.capacity}</TableCell>
-
-              {/* Location */}
-              <TableCell>{tank.location}</TableCell>
-
-              {/* Status */}
-              <TableCell>
-                <Badge
-                  className={
-                    tank.status === "Active"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }
-                >
+              <TableCell className="text-sm text-slate-700 py-2.5">{tank.capacity_value + " " + tank.capacity_unit || "—"}</TableCell>
+              <TableCell className="text-sm text-slate-600 py-2.5">{tank.location || "—"}</TableCell>
+              <TableCell className="text-sm text-slate-600 py-2.5">{tank.min_level || "—"}</TableCell>
+              <TableCell className="text-sm text-slate-600 py-2.5">{tank.max_level || "—"}</TableCell>
+              <TableCell className="py-2.5">
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyle[tank.status] || "bg-slate-100 text-slate-600"}`}>
                   {tank.status || "Active"}
-                </Badge>
+                </span>
               </TableCell>
-
-              {/* Actions */}
-              <TableCell className="text-right space-x-2">
-                <Button variant="outline" size="icon">
-                  <Pencil className="w-4 h-4" />
-                </Button>
-
-                <Button variant="destructive" size="icon">
-                  <Trash2 className="w-4 h-4" />
+              <TableCell className="py-2.5">
+                {tank.isPosted === 1 || tank.is_posted === 1 ? (
+                  <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full w-fit">
+                    <Lock className="w-2.5 h-2.5" /> Posted
+                  </span>
+                ) : (
+                  <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full w-fit block">
+                    Saved
+                  </span>
+                )}
+              </TableCell>
+              <TableCell className="text-right py-2.5">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => onView && onView(tank)}
+                  className="gap-1 text-xs h-7 px-2.5 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer"
+                >
+                  <Eye className="w-3 h-3" /> View
                 </Button>
               </TableCell>
             </TableRow>

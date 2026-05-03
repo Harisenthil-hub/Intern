@@ -5,8 +5,11 @@ import {
   Container,
   Droplets,
   Flame,
-  Settings,
+  Truck,
+  Repeat,
   LayoutDashboard,
+  ShieldAlert,
+  Activity,
 } from "lucide-react";
 
 import {
@@ -22,119 +25,152 @@ import {
   useSidebar,
 } from "../ui/sidebar";
 
-const navItems = [
+const navGroups = [
   {
-    title: "Dashboard",
-    url: "/",
-    icon: LayoutDashboard,
+    label: "Overview",
+    items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }],
   },
   {
-    title: "Tank Master",
-    url: "/tanks",
-    icon: Container,
+    label: "Inventory Management",
+    items: [
+      { title: "Tank Master", url: "/tanks", icon: Container },
+      { title: "Tank Monitoring", url: "/monitoring", icon: Droplets },
+      { title: "Gas Production", url: "/production", icon: Flame },
+    ],
   },
   {
-    title: "Tank Monitoring",
-    url: "/monitoring",
-    icon: Droplets,
+    title: "Gas Procurement",
+    url: "/procurement",
+    icon: Truck,
   },
   {
-    title: "Gas Production",
-    url: "/production",
-    icon: Flame,
+    title: "Issue to Filling",
+    url: "/issue-to-filling",
+    icon: Repeat,
+  },
+  {
+    title: "Loss / Leakage Monitoring",
+    url: "/loss-leakage-monitoring",
+    icon: ShieldAlert,
   },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const isCollapsed = state === "collapsed";
+  const normalizedNavGroups = navGroups.map((group) => {
+    if (Array.isArray(group.items)) {
+      return group;
+    }
+
+    return {
+      label: group.label ?? null,
+      items: [{ title: group.title, url: group.url, icon: group.icon }],
+    };
+  });
 
   return (
     <Sidebar
       variant="sidebar"
       collapsible="icon"
-      className="border-r shadow-sm transition-all duration-300"
+      className="border-r-0 shadow-xl transition-all duration-300"
       style={{
         "--sidebar-width": "16rem",
-        "--sidebar-width-icon": "3.8rem",
+        "--sidebar-width-icon": "4rem",
       }}
     >
-      <SidebarHeader className="h-16 flex items-center justify-center border-b px-4 w-full">
-        <div className="flex items-center gap-2 font-bold text-xl text-blue-600 w-full ">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white shrink-0">
-            <BarChart3 className="size-5" />
+      {/* Logo / Brand */}
+      <SidebarHeader className="h-16 flex items-center border-b border-sidebar-border px-3 w-full">
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-blue-500 text-white shadow-md shrink-0">
+            <Activity className="size-5" />
           </div>
-          {state === "expanded" && (
-            <span className="truncate transition-opacity duration-300">
-              Tank Admin
-            </span>
+          {!isCollapsed && (
+            <div className="flex flex-col leading-tight">
+              <span className="text-sm font-bold text-sidebar-foreground truncate">
+                Gas Track
+              </span>
+              <span className="text-xs text-sidebar-foreground/60 truncate">
+                Inventory System
+              </span>
+            </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4 gap-4">
-        <SidebarGroup className="text-center">
-          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Main Menu
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-2">
-              {navItems.map((item) => {
-                const isActive =
-                  location.pathname === item.url ||
-                  (item.url !== "/" && location.pathname.startsWith(item.url));
+      <SidebarContent className="px-2 py-3 gap-1">
+        {normalizedNavGroups.map((group, index) => (
+          <SidebarGroup
+            key={group.label ?? group.items[0]?.title ?? `group-${index}`}
+            className="p-0 mb-1"
+          >
+            {!isCollapsed && group.label && (
+              <SidebarGroupLabel className="text-[10px] font-semibold tracking-widest uppercase text-sidebar-foreground/40 px-3 py-2 mb-1">
+                {group.label}
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {group.items.map((item) => {
+                  const isActive =
+                    location.pathname === item.url ||
+                    (item.url !== "/" &&
+                      location.pathname.startsWith(item.url));
 
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={item.title}
-                      isActive={isActive}
-                      size="lg"
-                      className={`
-                        justify-start gap-3
-                        flex items-center gap-3 ${
-                          state === "collapsed"
-                            ? "justify-center"
-                            : "justify-start"
-                        }
-                        ${
-                          isActive
-                            ? "bg-blue-50 text-blue-700 font-medium shadow-sm ring-1 ring-blue-500/20"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                        }
-                      `}
-                    >
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-3 w-full"
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.title}
+                        isActive={isActive}
+                        size="default"
+                        className={`
+                          h-10 rounded-lg transition-all duration-150 
+                          ${isCollapsed ? "justify-center px-0" : "px-3"}
+                          ${
+                            isActive
+                              ? "bg-blue-500 text-white shadow-sm"
+                              : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          }
+                        `}
                       >
-                        <div
-                          className={`flex items-center justify-center ${
-                            state === "collapsed" ? "w-10 h-10" : ""
+                        <NavLink
+                          to={item.url}
+                          className={`flex items-center gap-3 w-full ${
+                            isCollapsed ? "justify-center" : ""
                           }`}
                         >
                           <item.icon
-                            className={
-                              state === "collapsed" ? "w-9 h-9" : "w-5 h-5"
-                            }
+                            className={`shrink-0 ${
+                              isActive ? "text-white" : ""
+                            } ${isCollapsed ? "w-5 h-5" : "w-4 h-4"}`}
                           />
-                        </div>
-
-                        <span
-                          className={state === "collapsed" ? "hidden" : "block"}
-                        >
-                          {item.title}
-                        </span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                          {!isCollapsed && (
+                            <span className="text-sm font-medium">
+                              {item.title}
+                            </span>
+                          )}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
+
+      {/* Footer hint 
+      {!isCollapsed && (
+        <div className="mt-auto px-4 py-3 border-t border-sidebar-border">
+          <p className="text-[10px] text-sidebar-foreground/40 text-center">
+            © 2025 GasTrack Pro v1.0
+          </p>
+        </div>
+      )}
+        */}
     </Sidebar>
   );
 }
