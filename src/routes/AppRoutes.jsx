@@ -1,3 +1,9 @@
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Layout from '../components/layout/Layout';
+import Dashboard from '../pages/Dashboard';
+import CylinderFilling from '../pages/CylinderFilling';
+import CylinderMovement from '../pages/CylinderMovement';
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Dashboard } from "../pages/Dashboard";
 import { TankMaster } from "../pages/TankMaster";
@@ -14,8 +20,15 @@ import { ProcurementStoreProvider } from "@/modules/procurement/ProcurementStore
 import { GasIssueStoreProvider } from "@/modules/filling/GasIssueStore";
 import { LossLeakageStoreProvider } from "@/modules/lossLeakage/LossLeakageStore";
 
-export function AppRoutes() {
+const AppRoutes = () => {
   return (
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="filling" element={<CylinderFilling />} />
+        <Route path="movement" element={<CylinderMovement />} />
+      </Route>
+    </Routes>
     <>
       <BrowserRouter>
         <ProcurementStoreProvider>
@@ -54,4 +67,6 @@ export function AppRoutes() {
       </BrowserRouter>
     </>
   );
-}
+};
+
+export default AppRoutes;
