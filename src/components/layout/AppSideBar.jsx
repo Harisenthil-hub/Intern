@@ -12,6 +12,9 @@ import {
   Activity,
   Beaker,
   ArrowRightLeft,
+  Undo2,
+  MapPin,
+  PackageCheck,
 } from "lucide-react";
 
 import {
@@ -53,6 +56,14 @@ const navGroups = [
     items: [
       { title: "Cylinder Filling", url: "/filling", icon: Beaker },
       { title: "Cylinder Movement", url: "/movement", icon: ArrowRightLeft },
+    ],
+  },
+  {
+    label: "Dispatch & Returns",
+    items: [
+      { title: "Dispatch Entry", url: "/dispatch", icon: PackageCheck },
+      { title: "Return Entry", url: "/return", icon: Undo2 },
+      { title: "Location Tracker", url: "/tracker", icon: MapPin },
     ],
   },
 ];
