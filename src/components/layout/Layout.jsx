@@ -34,6 +34,9 @@ const PAGE_TITLES = {
   "/loss-leakage-monitoring": "Loss / Leakage Records",
   "/loss-leakage-monitoring/new": "Loss / Leakage Monitoring",
   "/issue-to-filling/new": "Gas Issue Entry",
+  "/dispatch": "Dispatch Entry",
+  "/return": "Return Entry",
+  "/tracker": "Location Tracker",
 };
 
 const PAGES = {
@@ -74,6 +77,18 @@ const PAGES = {
     title: "Loss / Leakage Monitoring",
     desc: "Create and review loss or leakage entries",
   },
+  "/dispatch": {
+    title: "Dispatch Entry",
+    desc: "Manage cylinder dispatches to customers",
+  },
+  "/return": {
+    title: "Return Entry",
+    desc: "Track cylinder returns and conditions",
+  },
+  "/tracker": {
+    title: "Location Tracker",
+    desc: "Monitor cylinder locations and real-time status",
+  },
 };
 
 const BREADCRUMBS = {
@@ -113,6 +128,18 @@ const BREADCRUMBS = {
     { label: "Operations" },
     { label: "Loss / Leakage", href: "/loss-leakage-monitoring" },
     { label: "New Entry" },
+  ],
+  "/dispatch": [
+    { label: "Dispatch & Returns" },
+    { label: "Dispatch Entry", href: "/dispatch" },
+  ],
+  "/return": [
+    { label: "Dispatch & Returns" },
+    { label: "Return Entry", href: "/return" },
+  ],
+  "/tracker": [
+    { label: "Dispatch & Returns" },
+    { label: "Location Tracker", href: "/tracker" },
   ],
 };
 

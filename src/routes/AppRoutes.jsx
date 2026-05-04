@@ -13,6 +13,9 @@ import { GasIssueToFilling } from "../pages/GasIssueToFilling";
 import { GasIssueToFillingEntry } from "../pages/GasIssueToFillingEntry";
 import { LossLeakageMonitoring } from "../pages/LossLeakageMonitoring";
 import { LossLeakageMonitoringEntry } from "../pages/LossLeakageMonitoringEntry";
+import DispatchEntry from "../pages/DispatchEntry";
+import ReturnEntry from "../pages/ReturnEntry";
+import LocationTracker from "../pages/LocationTracker";
 
 import { ProcurementStoreProvider } from "@/modules/procurement/ProcurementStore";
 import { GasIssueStoreProvider } from "@/modules/filling/GasIssueStore";
@@ -42,6 +45,11 @@ const AppRoutes = () => {
               {/* Cylinder routes */}
               <Route path="/filling" element={<CylinderFilling />} />
               <Route path="/movement" element={<CylinderMovement />} />
+
+              {/* Inventory Management routes */}
+              <Route path="/dispatch" element={<DispatchEntry />} />
+              <Route path="/return" element={<ReturnEntry />} />
+              <Route path="/tracker" element={<LocationTracker />} />
               
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
