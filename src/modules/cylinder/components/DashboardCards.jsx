@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMockData } from '../services/mockData';
+import { fetchApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Box, CheckCircle, Circle, DivideCircle, Users, Wrench } from 'lucide-react';
 
@@ -16,7 +16,15 @@ const DashboardCards = () => {
     const [data, setData] = useState(null);
 
     useEffect(() => {
-        setData(getMockData().dashboard);
+        const load = async () => {
+            try {
+                const res = await fetchApi('/dashboard/cylinder');
+                setData(res);
+            } catch (error) {
+                console.error('Failed to load cylinder dashboard stats', error);
+            }
+        };
+        load();
     }, []);
 
     if (!data) return null;

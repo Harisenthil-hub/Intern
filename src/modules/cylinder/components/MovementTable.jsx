@@ -38,13 +38,14 @@ const MovementTable = ({ movements, onEdit }) => {
                                 <th className="p-3">From</th>
                                 <th className="p-3">To</th>
                                 <th className="p-3">Total Items</th>
+                                <th className="p-3">Status</th>
                                 <th className="p-3 rounded-tr-lg">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {movements.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="p-4 text-center text-gray-500">
+                                     <td colSpan="8" className="p-4 text-center text-gray-500">
                                         No recent movements.
                                     </td>
                                 </tr>
@@ -71,7 +72,12 @@ const MovementTable = ({ movements, onEdit }) => {
                                             <td className="p-3">{record.to_location ?? record.to}</td>
                                             <td className="p-3 font-semibold">{record.cylinders}</td>
                                             <td className="p-3">
-                                                {isSaved && (
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${record.is_posted === 1 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                    {record.is_posted === 1 ? 'Posted' : 'Draft'}
+                                                </span>
+                                            </td>
+                                            <td className="p-3">
+                                                {isSaved && record.is_posted !== 1 && (
                                                     <Button
                                                         variant="outline"
                                                         size="sm"

@@ -29,13 +29,14 @@ const FillingTable = ({ fillings, onEdit }) => {
                                 <th className="p-3">Tank ID</th>
                                 <th className="p-3">Cylinders</th>
                                 <th className="p-3">Total Net Wt (kg)</th>
+                                <th className="p-3">Status</th>
                                 <th className="p-3 rounded-tr-lg">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {fillings.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="p-4 text-center text-gray-500">
+                                     <td colSpan="8" className="p-4 text-center text-gray-500">
                                         No recent fillings.
                                     </td>
                                 </tr>
@@ -56,7 +57,12 @@ const FillingTable = ({ fillings, onEdit }) => {
                                                 {parseFloat(batch.net_weight ?? batch.netWeight ?? 0).toFixed(2)}
                                             </td>
                                             <td className="p-3">
-                                                {isSaved && (
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${batch.is_posted === 1 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                    {batch.is_posted === 1 ? 'Posted' : 'Draft'}
+                                                </span>
+                                            </td>
+                                            <td className="p-3">
+                                                {isSaved && batch.is_posted !== 1 && (
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
