@@ -88,30 +88,31 @@ const FillingForm = ({ onSave, onUpdate, editRecord, onCancelEdit }) => {
     const totalNetWeight = () =>
         lineItems.reduce((acc, item) => acc + parseFloat(calculateNet(item.emptyWeight, item.filledWeight)), 0);
 
-    const buildPayload = () => ({
+    const buildPayload = (isPosted) => ({
         ...formData,
         cylinders: lineItems.length,
         net_weight: totalNetWeight(),
         line_items: lineItems,
+        is_posted: isPosted ? 1 : 0,
     });
 
     // ── Submit handler ─────────────────────────────────────────────────────
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e, isPosted = false) => {
+        if (e) e.preventDefault();
         setLoading(true);
         try {
             if (isEditing) {
                 const updated = await import('../services/cylinderFillingApi').then((m) =>
-                    m.updateFilling(editId, buildPayload())
+                    m.updateFilling(editId, buildPayload(isPosted))
                 );
-                setToast({ type: 'success', message: 'Entry Updated' });
+                setToast({ type: 'success', message: isPosted ? 'Entry Posted' : 'Entry Updated' });
                 onUpdate && onUpdate(updated);
                 onCancelEdit && onCancelEdit();
             } else {
                 const saved = await import('../services/cylinderFillingApi').then((m) =>
-                    m.saveFilling(buildPayload())
+                    m.saveFilling(buildPayload(isPosted))
                 );
-                setToast({ type: 'success', message: 'Entry Saved' });
+                setToast({ type: 'success', message: isPosted ? 'Entry Posted' : 'Entry Saved' });
                 onSave && onSave(saved);
                 setFormData(blankForm());
                 setLineItems([blankLine()]);
@@ -152,7 +153,7 @@ const FillingForm = ({ onSave, onUpdate, editRecord, onCancelEdit }) => {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={(e) => e.preventDefault()}>
                     {/* Header Info */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <div>
@@ -300,11 +301,20 @@ const FillingForm = ({ onSave, onUpdate, editRecord, onCancelEdit }) => {
                             </Button>
                         )}
                         <Button
-                            type="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            type="button"
+                            variant="secondary"
+                            onClick={(e) => handleSubmit(e, false)}
                             disabled={loading}
                         >
-                            {loading ? 'Saving…' : isEditing ? 'Update Batch' : 'Save Filling Batch'}
+                            {loading ? 'Saving…' : isEditing ? 'Update Draft' : 'Save as Draft'}
+                        </Button>
+                        <Button
+                            type="button"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={(e) => handleSubmit(e, true)}
+                            disabled={loading}
+                        >
+                            {loading ? 'Posting…' : 'Post Data'}
                         </Button>
                     </div>
                 </form>
